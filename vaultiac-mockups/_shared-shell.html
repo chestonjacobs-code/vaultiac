@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VAULTIAC — Shared Shell</title>
+
+<!-- =====================================================
+     FONTS
+     Copy this block into the <head> of every page.
+====================================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+<style>
+/* =====================================================
+   CSS TOKENS
+   Copy the :root block into every page's <style> tag.
+====================================================== */
+:root {
+  /* --- Base --- */
+  --ink:      #06050c;   /* page background */
+  --paper:    #f3eee6;   /* primary text */
+  --muted:    #7a7488;   /* secondary text */
+  --muted2:   #9a93a6;   /* tertiary text */
+
+  /* --- Lines / borders --- */
+  --line:     rgba(255,255,255,.08);
+  --line2:    rgba(255,255,255,.13);
+
+  /* --- Gold accent (CTAs, highlights) --- */
+  --gold:     #e8c27a;
+  --gold2:    #f5d99a;
+  --gold3:    #c8a050;
+
+  /* --- Holo / feature colors --- */
+  --holo1:    #7ce8d6;   /* teal  — trend up, Stock Finder */
+  --holo2:    #a78bfa;   /* purple — Collection */
+  --holo3:    #f0a6c8;   /* pink  — trend down, Leaderboard */
+  --holo4:    #ffd98a;   /* warm yellow */
+
+  /* --- Surface layers (dark UI panels) --- */
+  --surface:  #0f0e1a;
+  --surface2: #161424;
+  --surface3: #1c1a2e;
+
+  /* --- Vault metal (hero, dial) --- */
+  --steel1:   #2e3340;
+  --steel2:   #1c2028;
+  --steel3:   #3a4050;
+  --steel4:   #4a5260;
+}
+
+/* =====================================================
+   RESET
+   Copy this into every page.
+====================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+html, body {
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  overflow-x: hidden;
+}
+
+/* =====================================================
+   GRAIN OVERLAY
+   Copy the body::before block into every page.
+   Always sits above the background, never blocks clicks.
+====================================================== */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .03;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =====================================================
+   NAV
+   Copy the <nav> HTML block and these styles into
+   every page that needs the top navigation bar.
+====================================================== */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 4vw, 40px);
+  height: 62px;
+  background: rgba(6,5,12,.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: "Fraunces", serif;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: .04em;
+  background: linear-gradient(120deg, #fff 0%, var(--gold) 50%, #ffe9b0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-decoration: none;
+}
+
+.safe-icon svg { width: 20px; height: 20px; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 7px 13px;
+  border-radius: 8px;
+  transition: .2s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.nav-link:hover { color: var(--paper); background: rgba(255,255,255,.05); }
+
+.nav-cta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #06050c;
+  background: linear-gradient(90deg, var(--gold3), var(--gold), var(--gold2));
+  border: none;
+  border-radius: 9px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: .2s;
+  font-family: inherit;
+  text-decoration: none;
+}
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,194,122,.35); }
+
+/* =====================================================
+   SHARED ANIMATIONS
+====================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll-reveal: add class="reveal" to any element,
+   JS will add "in" when it enters the viewport. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .65s ease, transform .65s ease;
+}
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+/* =====================================================
+   SHARED SCROLL-REVEAL SCRIPT
+   Drop this <script> at the bottom of every page's <body>.
+====================================================== */
+</style>
+</head>
+<body>
+
+<!-- =====================================================
+     NAV HTML
+     Copy this <nav> block into every page.
+====================================================== -->
+<nav>
+  <a class="nav-brand" href="vaultiac-home.html">
+    <span class="safe-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="16" height="13" rx="2" stroke="#e8c27a" stroke-width="1.5"/>
+        <rect x="4.5" y="6.5" width="8" height="7" rx="1" stroke="#e8c27a" stroke-width="1" opacity="0.5"/>
+        <circle cx="8.5" cy="10" r="1.6" stroke="#e8c27a" stroke-width="1.2"/>
+        <path d="M7.5 8.5 Q7.5 6.8 8.5 6.8 Q9.5 6.8 9.5 8.5" stroke="#e8c27a" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="15" y1="9" x2="15" y2="11" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="4" cy="7.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <circle cx="4" cy="12.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <line x1="5" y1="17" x2="5" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="15" y1="17" x2="15" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    VAULTIAC
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="vaultiac-home.html#features">Features</a>
+    <a class="nav-link" href="vaultiac-home.html#spotlight">Card Spotlight</a>
+    <a class="nav-cta" href="vaultiac-card-picker.html">Try it free</a>
+  </div>
+</nav>
+
+<!-- =====================================================
+     SCROLL-REVEAL SCRIPT
+     Copy this <script> block to the bottom of every page's <body>.
+====================================================== -->
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const ro = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: .1 });
+reveals.forEach(r => ro.observe(r));
+</script>
+
+</body>
+</html>

@@ -37,79 +37,126 @@ async function scrapeNewsStory() {
   }
 }
 
-async function scrapeMarketMovers() {
+// Fixed watchlist of top 20 most-traded Pokémon TCG cards
+const WATCHLIST = [
+  { name: 'Charizard ex', set: 'Obsidian Flames', tcgId: 'sv3-125' },
+  { name: 'Charizard ex', set: '151', tcgId: 'sv3pt5-6' },
+  { name: 'Umbreon VMAX', set: 'Evolving Skies', tcgId: 'swsh7-215' },
+  { name: 'Rayquaza VMAX', set: 'Evolving Skies', tcgId: 'swsh7-218' },
+  { name: 'Charizard VMAX', set: "Champion's Path", tcgId: 'swsh35-74' },
+  { name: 'Pikachu VMAX', set: 'Vivid Voltage', tcgId: 'swsh4-188' },
+  { name: 'Mew VMAX', set: 'Fusion Strike', tcgId: 'swsh8-269' },
+  { name: 'Lugia V', set: 'Silver Tempest', tcgId: 'swsh11-186' },
+  { name: 'Giratina VSTAR', set: 'Lost Origin', tcgId: 'swsh11-201' },
+  { name: 'Arceus VSTAR', set: 'Brilliant Stars', tcgId: 'swsh9-176' },
+  { name: 'Mewtwo ex', set: '151', tcgId: 'sv3pt5-205' },
+  { name: 'Gardevoir ex', set: 'Scarlet & Violet', tcgId: 'sv1-230' },
+  { name: 'Miraidon ex', set: 'Scarlet & Violet', tcgId: 'sv1-243' },
+  { name: 'Koraidon ex', set: 'Scarlet & Violet', tcgId: 'sv1-247' },
+  { name: 'Charizard ex', set: 'Paldean Fates', tcgId: 'sv4pt5-234' },
+  { name: 'Iono', set: 'Paldea Evolved', tcgId: 'sv2-185' },
+  { name: 'Pidgeot ex', set: 'Obsidian Flames', tcgId: 'sv3-164' },
+  { name: 'Umbreon ex', set: 'Twilight Masquerade', tcgId: 'sv6-211' },
+  { name: 'Darkrai VSTAR', set: 'Astral Radiance', tcgId: 'swsh10-180' },
+  { name: 'Origin Forme Palkia VSTAR', set: 'Astral Radiance', tcgId: 'swsh10-202' },
+];
+
+async function fetchCardPrice(card) {
   try {
-    // TCGFish hottest cards page — sorted by price change
-    const url = 'https://tcgfish.com/trending';
+    const apiKey = process.env.POKEMON_PRICE_API_KEY;
+    if (!apiKey) throw new Error('POKEMON_PRICE_API_KEY not set');
+
+    const url = `https://www.pokemonpricetracker.com/api/v2/cards?search=${encodeURIComponent(card.name)}&set=${encodeURIComponent(card.set)}&limit=1&includeHistory=false`;
     const response = await axios.get(url, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      }
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      timeout: 10000,
     });
 
-    const $ = cheerio.load(response.data);
-    const results = [];
+    const data = response.data;
+    const cards = data.data || [];
+    if (cards.length === 0) return null;
 
-    // TCGFish trending table — parse rows
-    $('table tbody tr, .card-row, .trending-row').each((i, el) => {
-      if (i >= 20) return; // cap at 20 rows
-      const cells = $(el).find('td');
-      if (cells.length < 3) return;
+    const result = cards[0];
+    const price = result.price?.market || result.price?.mid || result.price?.low || null;
+    if (!price) return null;
 
-      const name = $(cells[0]).text().trim() || $(el).find('.card-name').text().trim();
-      const priceText = $(cells[1]).text().trim() || $(el).find('.price').text().trim();
-      const changeText = $(cells[2]).text().trim() || $(el).find('.change').text().trim();
-      const setName = cells.length > 3 ? $(cells[3]).text().trim() : '';
-
-      if (!name || !priceText) return;
-
-      const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-      const changeStr = changeText.replace(/[^0-9.\-+]/g, '');
-      const change = parseFloat(changeStr) || 0;
-
-      if (!isNaN(price) && price > 0) {
-        results.push({
-          card_name: name,
-          set_name: setName || null,
-          sale_price: price,
-          volume: null,
-          price_change_pct: change,
-          source: 'tcgfish',
-          recorded_date: new Date().toISOString().split('T')[0],
-        });
-      }
-    });
-
-    // If scrape returned nothing, fall back to mock data
-    if (results.length === 0) {
-      console.warn('[scrape] TCGFish returned no results — using mock data');
-      return getMockMarketData();
-    }
-
-    console.log(`[scrape] TCGFish returned ${results.length} movers`);
-    return results;
-
+    return {
+      card_name: card.name,
+      set_name: card.set,
+      sale_price: parseFloat(price),
+      volume: null,
+      source: 'pokemonpricetracker',
+    };
   } catch (err) {
-    console.error('[scrape] TCGFish scrape failed:', err.message);
+    console.warn(`[scrape] Failed to fetch price for ${card.name}: ${err.message}`);
+    return null;
+  }
+}
+
+async function scrapeMarketMovers() {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Fetch yesterday's prices from DB for comparison
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  let yesterdayPrices = {};
+  try {
+    const { rows } = await pool.query(
+      'SELECT card_name, set_name, sale_price FROM market_data WHERE recorded_date = $1',
+      [yesterdayStr]
+    );
+    rows.forEach(r => {
+      yesterdayPrices[`${r.card_name}||${r.set_name}`] = parseFloat(r.sale_price);
+    });
+  } catch (err) {
+    console.warn('[scrape] Could not load yesterday prices:', err.message);
+  }
+
+  // Fetch today's prices from API (batched with small delays to respect rate limits)
+  const results = [];
+  for (const card of WATCHLIST) {
+    const priceData = await fetchCardPrice(card);
+    if (priceData) {
+      const key = `${priceData.card_name}||${priceData.set_name}`;
+      const prevPrice = yesterdayPrices[key];
+      const pctChange = prevPrice
+        ? parseFloat(((priceData.sale_price - prevPrice) / prevPrice * 100).toFixed(2))
+        : 0;
+
+      results.push({
+        ...priceData,
+        price_change_pct: pctChange,
+        recorded_date: today,
+      });
+    }
+    // Small delay between API calls to be respectful
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  if (results.length === 0) {
+    console.warn('[scrape] PokemonPriceTracker returned no results — using mock data');
     return getMockMarketData();
   }
+
+  console.log(`[scrape] PokemonPriceTracker returned ${results.length} prices`);
+  return results;
 }
 
 function getMockMarketData() {
   const today = new Date().toISOString().split('T')[0];
   return [
-    { card_name: 'Charizard ex', set_name: 'Obsidian Flames', sale_price: 42.50, volume: 312, price_change_pct: 18.5, source: 'mock', recorded_date: today },
-    { card_name: 'Umbreon VMAX', set_name: 'Evolving Skies', sale_price: 65.00, volume: 201, price_change_pct: 12.3, source: 'mock', recorded_date: today },
-    { card_name: 'Rayquaza VMAX', set_name: 'Evolving Skies', sale_price: 55.00, volume: 195, price_change_pct: 9.8, source: 'mock', recorded_date: today },
-    { card_name: 'Pikachu VMAX', set_name: 'Vivid Voltage', sale_price: 28.00, volume: 287, price_change_pct: 7.2, source: 'mock', recorded_date: today },
-    { card_name: 'Mew VMAX', set_name: 'Fusion Strike', sale_price: 38.00, volume: 178, price_change_pct: 6.1, source: 'mock', recorded_date: today },
-    { card_name: 'Lugia V', set_name: 'Silver Tempest', sale_price: 22.00, volume: 167, price_change_pct: 5.4, source: 'mock', recorded_date: today },
-    { card_name: 'Giratina VSTAR', set_name: 'Lost Origin', sale_price: 31.00, volume: 155, price_change_pct: 4.8, source: 'mock', recorded_date: today },
-    { card_name: 'Arceus VSTAR', set_name: 'Brilliant Stars', sale_price: 17.00, volume: 134, price_change_pct: 3.2, source: 'mock', recorded_date: today },
-    { card_name: 'Darkrai VSTAR', set_name: 'Astral Radiance', sale_price: 14.00, volume: 121, price_change_pct: 2.1, source: 'mock', recorded_date: today },
-    { card_name: 'Origin Forme Palkia VSTAR', set_name: 'Astral Radiance', sale_price: 19.00, volume: 143, price_change_pct: 1.8, source: 'mock', recorded_date: today },
+    { card_name: 'Charizard ex', set_name: 'Obsidian Flames', sale_price: 42.50, volume: null, price_change_pct: 18.5, source: 'mock', recorded_date: today },
+    { card_name: 'Umbreon VMAX', set_name: 'Evolving Skies', sale_price: 65.00, volume: null, price_change_pct: 12.3, source: 'mock', recorded_date: today },
+    { card_name: 'Rayquaza VMAX', set_name: 'Evolving Skies', sale_price: 55.00, volume: null, price_change_pct: 9.8, source: 'mock', recorded_date: today },
+    { card_name: 'Pikachu VMAX', set_name: 'Vivid Voltage', sale_price: 28.00, volume: null, price_change_pct: 7.2, source: 'mock', recorded_date: today },
+    { card_name: 'Mew VMAX', set_name: 'Fusion Strike', sale_price: 38.00, volume: null, price_change_pct: 6.1, source: 'mock', recorded_date: today },
+    { card_name: 'Lugia V', set_name: 'Silver Tempest', sale_price: 22.00, volume: null, price_change_pct: 5.4, source: 'mock', recorded_date: today },
+    { card_name: 'Giratina VSTAR', set_name: 'Lost Origin', sale_price: 31.00, volume: null, price_change_pct: 4.8, source: 'mock', recorded_date: today },
+    { card_name: 'Arceus VSTAR', set_name: 'Brilliant Stars', sale_price: 17.00, volume: null, price_change_pct: 3.2, source: 'mock', recorded_date: today },
+    { card_name: 'Darkrai VSTAR', set_name: 'Astral Radiance', sale_price: 14.00, volume: null, price_change_pct: 2.1, source: 'mock', recorded_date: today },
+    { card_name: 'Origin Forme Palkia VSTAR', set_name: 'Astral Radiance', sale_price: 19.00, volume: null, price_change_pct: 1.8, source: 'mock', recorded_date: today },
   ];
 }
 

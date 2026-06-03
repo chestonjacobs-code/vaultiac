@@ -31,10 +31,10 @@ app.listen(PORT, () => {
 
   // Seed market data on first deploy if table is empty
   const { runScrapeJob } = require('./jobs/newsletter-scrape');
-  pool.query('SELECT COUNT(*) FROM market_data').then(result => {
+  pool.query('SELECT COUNT(*) FROM market_data WHERE recorded_date = $1', [new Date().toISOString().split('T')[0]]).then(result => {
     if (parseInt(result.rows[0].count) === 0) {
-      console.log('[startup] market_data empty — running initial scrape');
-      runScrapeJob().catch(err => console.error('[startup] Initial scrape failed:', err.message));
+      console.log('[startup] No market data for today — running scrape');
+      runScrapeJob().catch(err => console.error('[startup] Scrape failed:', err.message));
     }
-  }).catch(() => {}); // ignore if table doesn't exist yet
+  }).catch(() => {});
 });

@@ -114,7 +114,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 
 <!-- HOME BUTTON -->
 <div style="position:fixed;top:16px;left:16px;z-index:30;">
-  <button onclick="window.location.href='vaultiac-home.html'" style="font-family:inherit;font-size:12px;font-weight:700;color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;">🏠 Home</button>
+  <button onclick="window.location.href='vaultiac-home.html'" style="font-family:inherit;font-size:12px;font-weight:700;color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;">← Home</button>
 </div>
 
 <div class="topbar">
@@ -129,15 +129,15 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   <div class="sub">Pokémon TCG news, market moves, and the hottest cards — weekly.</div>
 </div>
 
-<div class="latest-badge">&#9679; Pokémon edition live · More coming soon</div>
+<div class="latest-badge">&#9679; Newsletter coming soon</div>
 
 <div class="nl-grid">
 
-  <div class="nl-card nl-pokemon" onclick="window.location='vaultiac-newsletter-pokemon.html'">
+  <div class="nl-card nl-pokemon" style="opacity:.5;pointer-events:none;cursor:default;">
     <div class="nl-inner">
       <div class="nl-emoji">⚡</div>
       <div class="nl-info">
-        <div class="nl-label">Pokémon <span class="nl-new">NEW</span></div>
+        <div class="nl-label">Pokémon <span style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:#9a93a6;border:1px solid rgba(255,255,255,.12);margin-left:6px;">Coming Soon</span></div>
         <div class="nl-title">Scarlet &amp; Violet sets, Prismatic Evolutions sellout, and the card everyone's chasing</div>
         <div class="nl-meta">
           <span class="nl-issue">Issue #12</span>

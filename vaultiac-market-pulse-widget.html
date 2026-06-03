@@ -98,8 +98,15 @@ html,body{min-height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;
 <!-- TOP MOVER -->
 <div class="top-mover" id="topMoverCard">
   <div class="tm-label">Top Mover Today</div>
-  <div class="tm-name top-card-name">Loading…</div>
-  <div class="tm-set mover-set-top">—</div>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
+    <div id="tmCardImg" style="width:60px;height:84px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);flex:none;display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:20px;opacity:.3;">🃏</span>
+    </div>
+    <div>
+      <div class="tm-name top-card-name">Loading…</div>
+      <div class="tm-set mover-set-top" style="margin-bottom:0;">—</div>
+    </div>
+  </div>
   <div class="tm-stats">
     <div class="tm-price-wrap">
       <div class="tm-price-label">Market Price</div>
@@ -127,6 +134,21 @@ async function loadTopMover() {
     // Update card name
     const nameEl = document.querySelector('.top-card-name');
     if (nameEl) nameEl.textContent = card.card_name;
+
+    // Fetch card image from TCG API using card name
+    try {
+      const tcgRes = await fetch(`/api/cards/search?q=${encodeURIComponent(card.card_name)}`);
+      const tcgData = await tcgRes.json();
+      const tcgCards = tcgData.data || [];
+      if (tcgCards.length > 0 && tcgCards[0].images) {
+        const imgContainer = document.getElementById('tmCardImg');
+        if (imgContainer) {
+          imgContainer.innerHTML = `<img src="${tcgCards[0].images.small}" alt="${card.card_name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>`;
+        }
+      }
+    } catch (imgErr) {
+      console.warn('Could not load card image:', imgErr);
+    }
 
     // Update set
     const setEl = document.querySelector('.mover-set-top');

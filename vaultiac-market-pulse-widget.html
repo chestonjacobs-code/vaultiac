@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Market Pulse — VAULTIAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0a10;--paper:#f3eee6;--muted:#9a93a6;--line:rgba(255,255,255,.10);
+  --gold:#e8c27a;--holo1:#7ce8d6;--holo2:#a78bfa;--holo3:#f0a6c8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;
+  background:radial-gradient(1200px 700px at 50% -10%,#1b1726 0%,transparent 60%),
+    radial-gradient(900px 600px at 85% 110%,#211a2c 0%,transparent 55%),var(--ink);
+  color:var(--paper);display:flex;flex-direction:column;align-items:center;
+  padding:54px 20px 80px;overflow-x:hidden;}
+
+/* HOME BUTTON */
+.home-btn-wrap{position:fixed;top:16px;left:16px;z-index:30;}
+.home-btn{font-family:inherit;font-size:12px;font-weight:700;color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.home-btn:hover{color:var(--paper);}
+
+/* HEADER */
+.lead{text-align:center;max-width:560px;margin-bottom:40px;position:relative;z-index:2;}
+.lead .kick{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);font-weight:600;}
+.lead h1{font-family:"Fraunces",serif;font-weight:900;font-size:36px;line-height:1.05;margin-top:10px;
+  background:linear-gradient(120deg,#fff 0%,var(--gold) 45%,var(--holo2) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.lead .sub{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.55;}
+
+/* TOP MOVER CARD */
+.top-mover{
+  width:100%;max-width:560px;border-radius:20px;padding:28px 24px;
+  background:linear-gradient(155deg,#16121e 0%,#0d0b12 60%,#120d1a 100%);
+  border:1px solid rgba(232,194,122,.25);
+  box-shadow:0 20px 60px -20px rgba(0,0,0,.8);
+  position:relative;z-index:2;margin-bottom:24px;
+}
+.tm-label{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.tm-label::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.8s ease-in-out infinite;}
+.tm-name{font-family:"Fraunces",serif;font-weight:900;font-size:28px;line-height:1.05;margin-bottom:4px;}
+.tm-set{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.tm-stats{display:flex;gap:24px;align-items:flex-end;}
+.tm-price-wrap .tm-price-label{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);}
+.tm-price{font-family:"Fraunces",serif;font-weight:900;font-size:42px;line-height:1;
+  background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.tm-change{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;
+  padding:6px 14px;border-radius:999px;margin-top:8px;}
+.tm-change.up{color:#7ce8d6;background:rgba(124,232,214,.1);border:1px solid rgba(124,232,214,.28);}
+.tm-change.down{color:#f0a6c8;background:rgba(240,166,200,.1);border:1px solid rgba(240,166,200,.28);}
+
+/* MOVERS LIST */
+.section-label{width:100%;max-width:560px;position:relative;z-index:2;
+  display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.section-label span{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line);}
+
+.movers-list{width:100%;max-width:560px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:2;}
+.mover-row{
+  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;gap:14px;
+}
+.mover-rank{font-family:"Fraunces",serif;font-weight:700;font-size:16px;color:var(--muted);width:24px;text-align:center;flex:none;}
+.mover-rank.gold{color:var(--gold);}
+.mover-info{flex:1;min-width:0;}
+.mover-name{font-family:"Fraunces",serif;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mover-set{font-size:11px;color:var(--muted);margin-top:2px;}
+.mover-right{text-align:right;flex:none;}
+.mover-price{font-family:"Fraunces",serif;font-weight:700;font-size:15px;color:var(--gold);}
+.mover-pct{font-size:11px;font-weight:700;margin-top:2px;}
+.mover-pct.up{color:#7ce8d6;} .mover-pct.down{color:#f0a6c8;}
+
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
+
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- HOME BUTTON -->
+<div class="home-btn-wrap">
+  <button class="home-btn" onclick="window.location.href='vaultiac-home.html'">🏠 Home</button>
+</div>
+
+<!-- HEADER -->
+<div class="lead">
+  <div class="kick">Live Market Data</div>
+  <h1>Market Pulse</h1>
+  <div class="sub">Today's biggest Pokémon TCG price movers, updated daily.</div>
+</div>
+
+<!-- TOP MOVER -->
+<div class="top-mover" id="topMoverCard">
+  <div class="tm-label">Top Mover Today</div>
+  <div class="tm-name top-card-name">Loading…</div>
+  <div class="tm-set mover-set-top">—</div>
+  <div class="tm-stats">
+    <div class="tm-price-wrap">
+      <div class="tm-price-label">Market Price</div>
+      <div class="tm-price card-price">—</div>
+      <div class="tm-change up card-change">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- MOVERS LIST -->
+<div class="section-label"><span>Today's Top Movers</span></div>
+<div class="movers-list" id="moversList">
+  <div class="loading">Loading market data…</div>
+</div>
+
+<script>
+async function loadTopMover() {
+  try {
+    const res = await fetch('/api/newsletter/top-mover');
+    const data = await res.json();
+    const card = data.data;
+    if (!card) return;
+
+    // Update card name
+    const nameEl = document.querySelector('.top-card-name');
+    if (nameEl) nameEl.textContent = card.card_name;
+
+    // Update set
+    const setEl = document.querySelector('.mover-set-top');
+    if (setEl && card.set_name) setEl.textContent = card.set_name;
+
+    // Update price
+    const priceEl = document.querySelector('.card-price');
+    if (priceEl) priceEl.textContent = '$' + parseFloat(card.sale_price).toFixed(2);
+
+    // Update change %
+    const changeEl = document.querySelector('.card-change');
+    if (changeEl) {
+      const pct = parseFloat(card.price_change_pct) || 0;
+      changeEl.textContent = (pct >= 0 ? '▲ +' : '▼ ') + pct.toFixed(1) + '%';
+      changeEl.className = 'tm-change card-change ' + (pct >= 0 ? 'up' : 'down');
+    }
+  } catch (err) {
+    console.warn('Could not load top mover:', err);
+  }
+}
+
+async function loadTopMovers() {
+  try {
+    const res = await fetch('/api/newsletter/top-movers?limit=10');
+    const data = await res.json();
+    const cards = data.data || [];
+    const list = document.getElementById('moversList');
+
+    if (cards.length === 0) {
+      list.innerHTML = '<div class="loading">No market data yet — check back soon.</div>';
+      return;
+    }
+
+    list.innerHTML = cards.map((card, i) => {
+      const pct = parseFloat(card.price_change_pct) || 0;
+      const isUp = pct >= 0;
+      return `
+        <div class="mover-row">
+          <div class="mover-rank ${i === 0 ? 'gold' : ''}">#${i + 1}</div>
+          <div class="mover-info">
+            <div class="mover-name">${card.card_name}</div>
+            <div class="mover-set">${card.set_name || '—'}</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-price">$${parseFloat(card.sale_price).toFixed(2)}</div>
+            <div class="mover-pct ${isUp ? 'up' : 'down'}">${isUp ? '▲ +' : '▼ '}${pct.toFixed(1)}%</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    document.getElementById('moversList').innerHTML = '<div class="loading">Failed to load market data.</div>';
+    console.warn('Could not load top movers:', err);
+  }
+}
+
+window.addEventListener('load', () => {
+  loadTopMover();
+  loadTopMovers();
+});
+</script>
+
+<script src="/js/api.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env'), ove
 const express = require('express');
 const path = require('path');
 const { scheduleJob } = require('./jobs/newsletter-scrape');
+const pool = require('./db/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,4 +28,13 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Vaultiac server running at http://localhost:${PORT}`);
   scheduleJob();
+
+  // Seed market data on first deploy if table is empty
+  const { runScrapeJob } = require('./jobs/newsletter-scrape');
+  pool.query('SELECT COUNT(*) FROM market_data').then(result => {
+    if (parseInt(result.rows[0].count) === 0) {
+      console.log('[startup] market_data empty — running initial scrape');
+      runScrapeJob().catch(err => console.error('[startup] Initial scrape failed:', err.message));
+    }
+  }).catch(() => {}); // ignore if table doesn't exist yet
 });

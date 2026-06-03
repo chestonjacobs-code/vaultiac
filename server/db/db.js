@@ -36,6 +36,7 @@ async function initSchema() {
         set_name TEXT,
         sale_price REAL NOT NULL,
         volume INTEGER,
+        price_change_pct REAL DEFAULT 0,
         source TEXT,
         recorded_date TEXT NOT NULL
       );
@@ -48,6 +49,10 @@ async function initSchema() {
         published_date TEXT NOT NULL,
         scraped_at TEXT NOT NULL
       );
+    `);
+    // Add price_change_pct column if it doesn't exist yet (live DB migration)
+    await client.query(`
+      ALTER TABLE market_data ADD COLUMN IF NOT EXISTS price_change_pct REAL DEFAULT 0;
     `);
     console.log('Database schema initialized');
   } finally {

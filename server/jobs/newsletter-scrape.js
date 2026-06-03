@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const axios = require('axios');
-const db = require('../db/db');
+const pool = require('../db/db');
 
 function getEightWeeksAgo() {
   const d = new Date();
@@ -9,12 +9,10 @@ function getEightWeeksAgo() {
 }
 
 async function scrapeNewsStory() {
-  // Fetch Pokémon news RSS feed and parse first result
   const rssUrl = 'https://www.pokemon.com/us/pokemon-news/';
   const response = await axios.get(rssUrl, { timeout: 10000 });
   const html = response.data;
 
-  // Basic regex parse for the first news headline and link from the page
   const titleMatch = html.match(/<h3[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/h3>/i)
     || html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
   const headline = titleMatch
@@ -34,11 +32,7 @@ async function scrapeNewsStory() {
 }
 
 async function scrapeMarketData() {
-  // TODO: Add eBay OAuth token to use the real eBay Browse API
-  // eBay Browse API endpoint: https://api.ebay.com/buy/browse/v1/item_summary/search
-  // Requires OAuth 2.0 client credentials flow with scope: https://api.ebay.com/oauth/api_scope/buy.item.bulk
-
-  // Mock data — replace with real eBay Browse API calls once OAuth is configured
+  // TODO: Add eBay OAuth token for real data
   const mockCards = [
     { card_name: 'Charizard ex', set_name: 'Obsidian Flames', sale_price: 42.50, volume: 312 },
     { card_name: 'Pikachu VMAX', set_name: 'Vivid Voltage', sale_price: 28.00, volume: 287 },
@@ -51,7 +45,6 @@ async function scrapeMarketData() {
     { card_name: 'Arceus VSTAR', set_name: 'Brilliant Stars', sale_price: 17.00, volume: 134 },
     { card_name: 'Darkrai VSTAR', set_name: 'Astral Radiance', sale_price: 14.00, volume: 121 },
   ];
-
   const today = new Date().toISOString().split('T')[0];
   return mockCards.map((c) => ({ ...c, source: 'ebay_mock', recorded_date: today }));
 }
@@ -61,42 +54,40 @@ async function runScrapeJob() {
   console.log(`[newsletter-scrape] Job started at ${jobStart}`);
 
   try {
-    // 1. Scrape news story
     const story = await scrapeNewsStory();
-    db.prepare(
-      'INSERT INTO news_stories (headline, summary, source_url, published_date, scraped_at) VALUES (?, ?, ?, ?, ?)'
-    ).run(story.headline, story.summary, story.source_url, story.published_date, story.scraped_at);
+    await pool.query(
+      'INSERT INTO news_stories (headline, summary, source_url, published_date, scraped_at) VALUES ($1,$2,$3,$4,$5)',
+      [story.headline, story.summary, story.source_url, story.published_date, story.scraped_at]
+    );
     console.log(`[newsletter-scrape] News story saved: "${story.headline}"`);
   } catch (err) {
     console.error('[newsletter-scrape] News scrape failed:', err.message);
   }
 
   try {
-    // 2. Scrape/mock market data
     const marketRows = await scrapeMarketData();
-    const insertMarket = db.prepare(
-      'INSERT INTO market_data (card_name, set_name, sale_price, volume, source, recorded_date) VALUES (?, ?, ?, ?, ?, ?)'
-    );
-    const insertMany = db.transaction((rows) => {
-      for (const row of rows) {
-        insertMarket.run(row.card_name, row.set_name, row.sale_price, row.volume, row.source, row.recorded_date);
-      }
-    });
-    insertMany(marketRows);
+    for (const row of marketRows) {
+      await pool.query(
+        'INSERT INTO market_data (card_name, set_name, sale_price, volume, source, recorded_date) VALUES ($1,$2,$3,$4,$5,$6)',
+        [row.card_name, row.set_name, row.sale_price, row.volume, row.source, row.recorded_date]
+      );
+    }
     console.log(`[newsletter-scrape] ${marketRows.length} market rows saved`);
   } catch (err) {
     console.error('[newsletter-scrape] Market scrape failed:', err.message);
   }
 
-  // 3. Delete news older than 8 weeks
-  const cutoff = getEightWeeksAgo();
-  const deleted = db.prepare('DELETE FROM news_stories WHERE published_date < ?').run(cutoff);
-  console.log(`[newsletter-scrape] Deleted ${deleted.changes} old news stories (before ${cutoff})`);
+  try {
+    const cutoff = getEightWeeksAgo();
+    const result = await pool.query('DELETE FROM news_stories WHERE published_date < $1', [cutoff]);
+    console.log(`[newsletter-scrape] Deleted ${result.rowCount} old news stories (before ${cutoff})`);
+  } catch (err) {
+    console.error('[newsletter-scrape] Cleanup failed:', err.message);
+  }
 
   console.log(`[newsletter-scrape] Job completed at ${new Date().toISOString()}`);
 }
 
-// Schedule: every Monday at 7:00 AM
 function scheduleJob() {
   cron.schedule('0 7 * * 1', () => {
     runScrapeJob().catch((err) => console.error('[newsletter-scrape] Unhandled error:', err));

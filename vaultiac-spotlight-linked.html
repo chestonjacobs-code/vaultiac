@@ -455,35 +455,97 @@ const r = (a,b) => a + Math.random()*(b-a);
   if(!raw) return;
   try{
     const c = JSON.parse(raw);
-    // card name in meta
+
+    // ---- CARD NAME in headline and meta ----
     const nameEl = document.querySelector('.sf-meta .name');
-    const subEl  = document.querySelector('.sf-meta .sub');
-    if(nameEl) nameEl.textContent = c.name;
-    // use c.number for live cards, c.num for mock cards
-    const cardNum = c.number || c.num || '';
-    if(subEl)  subEl.textContent  = [c.set, cardNum, rarityLabel(c.rarity)].filter(Boolean).join(' · ');
-    // value — only update if present (live cards won't have price)
-    const amtEl = document.querySelector('.sf-value .amt');
-    const trendEl = document.querySelector('.sf-value .trend');
-    if(amtEl && c.price)   amtEl.textContent  = c.price;
-    if(trendEl && c.trend){ trendEl.textContent = (c.up ? '▲ ' : '▼ ') + c.trend + ' this week'; trendEl.style.color = c.up ? '#7ce8d6' : '#f0a6c8'; }
-    if(trendEl && !c.trend){ trendEl.style.display = 'none'; }
-    if(amtEl && !c.price){ amtEl.closest('.sf-value').style.display = 'none'; }
-    // card inner name
+    if(nameEl && c.name) nameEl.textContent = c.name;
+
+    // card inner name (shortened to first word for the card widget)
     const nmEl = document.querySelector('.card .nm');
-    if(nmEl) nmEl.textContent = c.pokemon || c.name.split(' ')[0];
-    // chip caption — reset to Latest Pickup
-    document.getElementById('eyebrow').textContent = 'Latest Pickup';
-    document.getElementById('bigline').textContent  = 'Just Pulled It.';
-    // back button
-    const wrap = document.querySelector('.story-wrap');
+    if(nmEl && c.name) nmEl.textContent = c.name.split('-')[0].trim();
+
+    // ---- SUB TEXT — set · number · rarity ----
+    const subEl = document.querySelector('.sf-meta .sub');
+    if(subEl){
+      const cardNum = c.number || c.num || '';
+      const rarityLabel = c.rarity || '';
+      subEl.textContent = [c.set, cardNum, rarityLabel].filter(Boolean).join(' · ');
+    }
+
+    // ---- MARKET VALUE — hide if no price data ----
+    const amtEl   = document.querySelector('.sf-value .amt');
+    const trendEl = document.querySelector('.sf-value .trend');
+    if(amtEl && c.price){
+      amtEl.textContent = c.price;
+    }
+    if(trendEl && c.trend){
+      trendEl.textContent = (c.up ? '▲ ' : '▼ ') + c.trend + ' this week';
+      trendEl.style.color = c.up ? '#7ce8d6' : '#f0a6c8';
+    }
+    if(amtEl && !c.price){
+      const valueSection = amtEl.closest('.sf-value');
+      if(valueSection) valueSection.style.display = 'none';
+    }
+    if(trendEl && !c.trend) trendEl.style.display = 'none';
+
+    // ---- LIVE CARD IMAGE — replace mock card art ----
+    const imageUrl = c.image_large || c.image_small || null;
+    if(imageUrl){
+      // Replace background art zone with real card image
+      const artEl = document.querySelector('.card .art');
+      if(artEl){
+        artEl.style.backgroundImage   = `url('${imageUrl}')`;
+        artEl.style.backgroundSize    = 'cover';
+        artEl.style.backgroundPosition = 'center';
+        artEl.style.backgroundRepeat  = 'no-repeat';
+        artEl.style.border            = 'none';
+        // Hide the mock creature element
+        const creature = artEl.querySelector('.creature');
+        if(creature) creature.style.display = 'none';
+      }
+
+      // Also replace the entire mock card with a clean card image display
+      // Find the card wrapper and inject a full-card image overlay
+      const cardEl = document.getElementById('theCard');
+      if(cardEl){
+        // Add a full-card image overlay on top of the mock card
+        const overlay = document.createElement('img');
+        overlay.src = imageUrl;
+        overlay.alt = c.name || 'Card';
+        overlay.style.cssText = `
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          border-radius: 13px;
+          z-index: 10;
+        `;
+        cardEl.style.position = 'relative';
+        cardEl.appendChild(overlay);
+      }
+    }
+
+    // ---- HP on card widget ----
+    const hpEl = document.querySelector('.card .hp');
+    if(hpEl && c.hp){
+      hpEl.innerHTML = `HP ${c.hp} <span class="t"></span>`;
+    }
+
+    // ---- CAPTION — reset to Latest Pickup ----
+    const eyebrow = document.getElementById('eyebrow');
+    const bigline = document.getElementById('bigline');
+    if(eyebrow) eyebrow.textContent = 'Latest Pickup';
+    if(bigline) bigline.textContent = 'Just Pulled It.';
+
+    // ---- BACK BUTTON ----
     const backBar = document.createElement('div');
     backBar.style.cssText = 'position:fixed;top:16px;left:16px;z-index:30;';
     backBar.innerHTML = `<button onclick="window.location.href='vaultiac-card-picker.html'" style="font-family:inherit;font-size:12px;font-weight:700;color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;">← Back to Search</button>`;
     document.body.appendChild(backBar);
-  } catch(e){}
-  function rarityLabel(r){
-    return {secret:'Secret Rare',ultra:'Ultra Rare',rare:'Holo Rare',common:'Common'}[r] || r;
+
+  } catch(e){
+    console.warn('injectCardData error:', e);
   }
 })();
 
@@ -1196,53 +1258,5 @@ document.getElementById('removeCustom').addEventListener('click',()=>{
 </script>
 
 <script src="/js/api.js"></script>
-<script>
-(function(){
-  const raw = sessionStorage.getItem('vaultiac_card');
-  if (!raw) return;
-  try {
-    const card = JSON.parse(raw);
-
-    // If we have a live card image, display it in the card art zone
-    if (card.image_large) {
-      const artEl = document.querySelector('.card .art');
-      if (artEl) {
-        artEl.style.backgroundImage = `url('${card.image_large}')`;
-        artEl.style.backgroundSize = 'cover';
-        artEl.style.backgroundPosition = 'center';
-        const creature = artEl.querySelector('.creature');
-        if (creature) creature.style.display = 'none';
-      }
-      // Also try any explicit img[alt] element
-      const imgEl = document.querySelector('.card-img, .spotlight-img');
-      if (imgEl) imgEl.src = card.image_large;
-    }
-
-    // Fix sub text for live cards — use card.number instead of card.num
-    if (card.number) {
-      const subEl = document.querySelector('.sf-meta .sub');
-      if (subEl) {
-        const rarityMap = {secret:'Secret Rare', ultra:'Ultra Rare', rare:'Holo Rare', common:'Common'};
-        const rarityLabel = rarityMap[card.rarity] || card.rarity || '';
-        subEl.textContent = `${card.set || ''} · ${card.number} · ${rarityLabel}`;
-      }
-    }
-
-    // Generic selectors from shared API spec (no-op if classes absent)
-    document.querySelectorAll('.card-name, .spotlight-name, .sc-name').forEach(el => {
-      if (card.name) el.textContent = card.name;
-    });
-    document.querySelectorAll('.card-set, .spotlight-set, .sc-set').forEach(el => {
-      if (card.set) el.textContent = card.set;
-    });
-    document.querySelectorAll('.card-rarity, .spotlight-rarity, .sc-rarity').forEach(el => {
-      if (card.rarity) el.textContent = card.rarity;
-    });
-
-  } catch(e) {
-    console.warn('Could not parse card data from sessionStorage', e);
-  }
-})();
-</script>
 </body>
 </html>

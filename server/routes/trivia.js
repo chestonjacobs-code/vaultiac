@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const db = require('../db/db');
+const pool = require('../db/db');
 const router = express.Router();
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2';
@@ -84,7 +84,7 @@ router.get('/daily', async (req, res) => {
 });
 
 // POST /api/trivia/submit
-router.post('/submit', (req, res) => {
+router.post('/submit', async (req, res) => {
   const { username, pokemon_name, guess, clues_used } = req.body;
   if (!username || !pokemon_name || !guess || clues_used == null) {
     return res.status(400).json({ error: 'username, pokemon_name, guess, and clues_used are required' });
@@ -95,40 +95,49 @@ router.post('/submit', (req, res) => {
   const today = getToday();
   const yesterday = getYesterday();
 
-  let user = db.prepare('SELECT * FROM leaderboard WHERE username = ?').get(username);
-  if (!user) {
-    db.prepare(
-      'INSERT INTO leaderboard (username, total_points, current_streak, longest_streak, last_played_date) VALUES (?, 0, 0, 0, NULL)'
-    ).run(username);
-    user = db.prepare('SELECT * FROM leaderboard WHERE username = ?').get(username);
-  }
+  try {
+    // Upsert user
+    await pool.query(
+      `INSERT INTO leaderboard (username, total_points, current_streak, longest_streak, last_played_date)
+       VALUES ($1, 0, 0, 0, NULL)
+       ON CONFLICT (username) DO NOTHING`,
+      [username]
+    );
 
-  let { total_points, current_streak, longest_streak, last_played_date } = user;
+    const { rows } = await pool.query(
+      'SELECT * FROM leaderboard WHERE username = $1',
+      [username]
+    );
+    let { total_points, current_streak, longest_streak, last_played_date } = rows[0];
 
-  if (correct) {
-    total_points += points_earned;
+    if (correct) {
+      total_points += points_earned;
+      if (last_played_date === yesterday) {
+        current_streak += 1;
+      } else if (last_played_date === today) {
+        // already played today — no change
+      } else {
+        current_streak = 1;
+      }
+      if (current_streak > longest_streak) longest_streak = current_streak;
+      last_played_date = today;
 
-    if (last_played_date === yesterday) {
-      current_streak += 1;
-    } else if (last_played_date === today) {
-      // already played today — no streak change
-    } else {
-      current_streak = 1;
+      await pool.query(
+        'UPDATE leaderboard SET total_points=$1, current_streak=$2, longest_streak=$3, last_played_date=$4 WHERE username=$5',
+        [total_points, current_streak, longest_streak, last_played_date, username]
+      );
     }
 
-    if (current_streak > longest_streak) longest_streak = current_streak;
-    last_played_date = today;
+    await pool.query(
+      'INSERT INTO trivia_sessions (username, pokemon_name, clues_used, points_earned, solved, played_at) VALUES ($1,$2,$3,$4,$5,$6)',
+      [username, pokemon_name, clues_used, points_earned, correct ? 1 : 0, new Date().toISOString()]
+    );
 
-    db.prepare(
-      'UPDATE leaderboard SET total_points = ?, current_streak = ?, longest_streak = ?, last_played_date = ? WHERE username = ?'
-    ).run(total_points, current_streak, longest_streak, last_played_date, username);
+    res.json({ correct, points_earned, current_streak, total_points });
+  } catch (err) {
+    console.error('Trivia submit error:', err.message);
+    res.status(500).json({ error: 'Failed to submit trivia' });
   }
-
-  db.prepare(
-    'INSERT INTO trivia_sessions (username, pokemon_name, clues_used, points_earned, solved, played_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(username, pokemon_name, clues_used, points_earned, correct ? 1 : 0, new Date().toISOString());
-
-  res.json({ correct, points_earned, current_streak, total_points });
 });
 
 module.exports = router;

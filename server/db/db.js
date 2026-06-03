@@ -1,23 +1,60 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
-const Database = require('better-sqlite3');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'vaultiac.db');
-const schemaPath = path.join(__dirname, 'schema.sql');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
-// Ensure the directory exists (important for /data volume on Railway)
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Initialize schema on first connection
+async function initSchema() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS leaderboard (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        total_points INTEGER DEFAULT 0,
+        current_streak INTEGER DEFAULT 0,
+        longest_streak INTEGER DEFAULT 0,
+        last_played_date TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS trivia_sessions (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL,
+        pokemon_name TEXT NOT NULL,
+        clues_used INTEGER NOT NULL,
+        points_earned INTEGER NOT NULL,
+        solved INTEGER NOT NULL DEFAULT 0,
+        played_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS market_data (
+        id SERIAL PRIMARY KEY,
+        card_name TEXT NOT NULL,
+        set_name TEXT,
+        sale_price REAL NOT NULL,
+        volume INTEGER,
+        source TEXT,
+        recorded_date TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS news_stories (
+        id SERIAL PRIMARY KEY,
+        headline TEXT NOT NULL,
+        summary TEXT,
+        source_url TEXT,
+        published_date TEXT NOT NULL,
+        scraped_at TEXT NOT NULL
+      );
+    `);
+    console.log('Database schema initialized');
+  } finally {
+    client.release();
+  }
 }
 
-const db = new Database(dbPath);
+initSchema().catch(err => console.error('Schema init error:', err));
 
-// Enable WAL mode for better concurrent read performance
-db.pragma('journal_mode = WAL');
-
-const schema = fs.readFileSync(schemaPath, 'utf8');
-db.exec(schema);
-
-module.exports = db;
+module.exports = pool;

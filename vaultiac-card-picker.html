@@ -744,15 +744,85 @@ function getCurrentCards(){
 }
 
 // ===== ACTIONS =====
-function selectPokemon(name){
+async function selectPokemon(name){
   selectedPokemon = name;
   selectedSet = null;
   selectedCard = null;
-  const cards = CARDS[name] || FALLBACK_CARDS(name);
+  window._selectedLiveCard = null;
+
   document.getElementById('cardResultsTitle').innerHTML = `<em>${name}</em> cards`;
   showCardResults();
-  renderCardList(cards);
+
+  // Show loading state
+  document.getElementById('cardList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Loading cards…</div>';
+
+  try {
+    const data = await API.searchCards(name);
+    const cards = data.data || [];
+
+    if (cards.length === 0) {
+      document.getElementById('cardList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">No cards found for "' + name + '"</div>';
+      return;
+    }
+
+    // Store for CTA use
+    window._liveCards = cards;
+
+    // Render as card rows with real images
+    const list = document.getElementById('cardList');
+    list.innerHTML = cards.slice(0, 40).map((card, i) => {
+      const types = card.types || [];
+      const typeHtml = types.map(t => typeIcon(t)).join(' ');
+      const rarityTag = card.rarity ? `<span class="tag tag-${rarityTagClass(card.rarity)}">${card.rarity}</span>` : '';
+      return `
+        <button class="card-row stagger-${Math.min(i+1,6)}" data-card-id="${card.id}">
+          <div class="card-thumb" style="background:var(--surface3);padding:0;overflow:hidden;">
+            <img src="${card.images.small}" alt="${card.name}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:7px;"
+              loading="lazy"/>
+          </div>
+          <div class="card-info">
+            <div class="card-row-name">${card.name}</div>
+            <div class="card-row-sub">${card.set ? card.set.name : ''} · #${card.number || ''}</div>
+            <div class="card-row-tags" style="margin-top:5px;">
+              ${rarityTag}
+              ${typeHtml ? `<span style="display:inline-flex;gap:3px;">${typeHtml}</span>` : ''}
+            </div>
+          </div>
+          <div class="card-row-value">
+            <div class="card-price" style="font-size:11px;color:var(--muted);">${card.hp ? card.hp + ' HP' : ''}</div>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.card-row').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardId = btn.dataset.cardId;
+        const card = (window._liveCards || []).find(c => c.id === cardId);
+        if (!card) return;
+
+        list.querySelectorAll('.card-row').forEach(el => el.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        window._selectedLiveCard = card;
+        showCTA();
+      });
+    });
+
+  } catch (err) {
+    document.getElementById('cardList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Failed to load cards — check connection</div>';
+  }
+
   renderPokemonGrid();
+}
+
+function rarityTagClass(rarity) {
+  const r = (rarity || '').toLowerCase();
+  if (r.includes('secret') || r.includes('hyper') || r.includes('special illustration')) return 'secret';
+  if (r.includes('ultra') || r.includes('full art') || r.includes('vstar') || r.includes('vmax')) return 'ultra';
+  if (r.includes('holo') || r.includes('rare')) return 'rare';
+  return 'common';
 }
 
 function selectSet(name){

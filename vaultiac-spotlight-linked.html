@@ -450,7 +450,7 @@ body{display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
 const r = (a,b) => a + Math.random()*(b-a);
 
 // ---- CARD DATA FROM PICKER ----
-(function injectCardData(){
+function injectCardData(){
   const raw = sessionStorage.getItem('vaultiac_card');
   if(!raw) return;
   try{
@@ -547,7 +547,9 @@ const r = (a,b) => a + Math.random()*(b-a);
   } catch(e){
     console.warn('injectCardData error:', e);
   }
-})();
+}
+// Delay injection until after vault animation clears (3.3s) + buffer
+setTimeout(injectCardData, 3400);
 
 // ---- SHARE CTA ----
 document.getElementById('shareCtaBtn').addEventListener('click', () => {

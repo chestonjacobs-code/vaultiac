@@ -54,6 +54,10 @@ async function initSchema() {
     await client.query(`
       ALTER TABLE market_data ADD COLUMN IF NOT EXISTS price_change_pct REAL DEFAULT 0;
     `);
+    // Add daily_play_date column for trivia daily lock
+    await client.query(`
+      ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS daily_play_date TEXT;
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

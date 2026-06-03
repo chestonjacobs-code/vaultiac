@@ -15,6 +15,30 @@ function getYesterday() {
   return d.toISOString().split('T')[0];
 }
 
+// Daily period: resets at 8AM each day
+// Returns a string like "2026-06-03-period2" (8AM+) or previous day's "period2" (before 8AM)
+function getCurrentPeriod() {
+  const now = new Date();
+  const hour = now.getHours();
+  const dateStr = now.toISOString().split('T')[0];
+  if (hour < 8) {
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0] + '-period2';
+  }
+  return dateStr + '-period2';
+}
+
+function getNextReset() {
+  const now = new Date();
+  const next = new Date(now);
+  if (now.getHours() >= 8) {
+    next.setDate(next.getDate() + 1);
+  }
+  next.setHours(8, 0, 0, 0);
+  return next.toISOString();
+}
+
 function buildClues(pokemon, speciesData) {
   // Clue 1 — Type
   const types = pokemon.types.map(t => t.type.name.charAt(0).toUpperCase() + t.type.name.slice(1));
@@ -83,6 +107,34 @@ router.get('/daily', async (req, res) => {
   }
 });
 
+// GET /api/trivia/status — check if user has played today
+router.get('/status', async (req, res) => {
+  const { username } = req.query;
+  if (!username) return res.json({ can_play: true, next_reset: getNextReset() });
+
+  try {
+    const { rows } = await pool.query(
+      'SELECT daily_play_date FROM leaderboard WHERE username = $1',
+      [username]
+    );
+
+    if (rows.length === 0) return res.json({ can_play: true, next_reset: getNextReset() });
+
+    const playDate = rows[0].daily_play_date;
+    const currentPeriod = getCurrentPeriod();
+    const canPlay = playDate !== currentPeriod;
+
+    res.json({
+      can_play: canPlay,
+      next_reset: getNextReset(),
+      last_played_period: playDate || null,
+    });
+  } catch (err) {
+    console.error('Trivia status error:', err.message);
+    res.json({ can_play: true, next_reset: getNextReset() });
+  }
+});
+
 // POST /api/trivia/submit
 router.post('/submit', async (req, res) => {
   const { username, pokemon_name, guess, clues_used } = req.body;
@@ -98,8 +150,8 @@ router.post('/submit', async (req, res) => {
   try {
     // Upsert user
     await pool.query(
-      `INSERT INTO leaderboard (username, total_points, current_streak, longest_streak, last_played_date)
-       VALUES ($1, 0, 0, 0, NULL)
+      `INSERT INTO leaderboard (username, total_points, current_streak, longest_streak, last_played_date, daily_play_date)
+       VALUES ($1, 0, 0, 0, NULL, NULL)
        ON CONFLICT (username) DO NOTHING`,
       [username]
     );
@@ -122,9 +174,10 @@ router.post('/submit', async (req, res) => {
       if (current_streak > longest_streak) longest_streak = current_streak;
       last_played_date = today;
 
+      const currentPeriod = getCurrentPeriod();
       await pool.query(
-        'UPDATE leaderboard SET total_points=$1, current_streak=$2, longest_streak=$3, last_played_date=$4 WHERE username=$5',
-        [total_points, current_streak, longest_streak, last_played_date, username]
+        'UPDATE leaderboard SET total_points=$1, current_streak=$2, longest_streak=$3, last_played_date=$4, daily_play_date=$5 WHERE username=$6',
+        [total_points, current_streak, longest_streak, last_played_date, currentPeriod, username]
       );
     }
 

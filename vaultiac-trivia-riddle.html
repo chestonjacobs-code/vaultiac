@@ -274,8 +274,44 @@ let username = localStorage.getItem('vaultiac_username') || 'Player';
 
 // ===== LOAD DAILY TRIVIA =====
 async function loadDailyTrivia() {
+  const clueContainer = document.getElementById('clueList') || document.querySelector('.clue-list');
   const inputZone = document.getElementById('inputZone');
+
   if (inputZone) inputZone.style.pointerEvents = 'none';
+
+  // ===== DAILY LOCK CHECK =====
+  try {
+    const statusRes = await fetch(`/api/trivia/status?username=${encodeURIComponent(username)}`);
+    const status = await statusRes.json();
+
+    if (!status.can_play) {
+      const nextReset = new Date(status.next_reset);
+      const resetStr = nextReset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const resetDateStr = nextReset.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+      // Show "come back tomorrow" message
+      const container = clueContainer || document.querySelector('.clues') || document.body;
+      const lockEl = document.createElement('div');
+      lockEl.style.cssText = 'text-align:center;padding:40px 20px;';
+      lockEl.innerHTML = `
+        <div style="font-size:32px;margin-bottom:16px;">✅</div>
+        <div style="font-family:Fraunces,serif;font-weight:700;font-size:20px;margin-bottom:8px;">You've played today!</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow for a new Pokémon.</div>
+        <div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 16px;display:inline-block;">
+          Next puzzle: <strong style="color:var(--gold);">${resetDateStr} at ${resetStr}</strong>
+        </div>
+      `;
+      if (container) container.appendChild(lockEl);
+
+      // Hide input
+      if (inputZone) inputZone.style.display = 'none';
+      return;
+    }
+  } catch (err) {
+    console.warn('Could not check trivia status:', err);
+    // Fail open — let them play if status check fails
+  }
+  // ===== END DAILY LOCK CHECK =====
 
   try {
     const data = await API.getDailyTrivia();

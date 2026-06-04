@@ -21,12 +21,11 @@ body{min-height:100%;display:flex;flex-direction:column;align-items:center;}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
-/* ===== COIN BURST CANVAS — fullscreen overlay ===== */
-#coinCanvas{
-  position:fixed;inset:0;width:100%;height:100%;z-index:50;pointer-events:none;
-  opacity:1;transition:opacity .6s ease;
+/* ===== PAGE FADE IN ===== */
+.page-fadein{
+  opacity:0;animation:pageFadeIn .6s ease .1s forwards;
 }
-#coinCanvas.done{opacity:0;}
+@keyframes pageFadeIn{to{opacity:1;}}
 
 /* ===== MAIN CONTENT ===== */
 .page{
@@ -86,6 +85,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
   background:radial-gradient(130% 50% at 50% 110%,rgba(232,194,122,.28),transparent 58%),
     linear-gradient(170deg,#16121e 0%,#0d0b12 55%,#120d1a 100%);
   padding:18px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  position:relative;min-height:320px;
 }
 .ms-top{width:100%;display:flex;justify-content:space-between;align-items:center;}
 .ms-brand{font-family:"Fraunces",serif;font-weight:900;font-size:12px;letter-spacing:.04em;
@@ -225,11 +225,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
   <button onclick="window.location.href='vaultiac-home.html'" style="font-family:inherit;font-size:12px;font-weight:700;color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;">← Home</button>
 </div>
 
-<!-- COIN BURST CANVAS -->
-<canvas id="coinCanvas"></canvas>
-
 <!-- TOP NAV -->
-<div class="topnav" id="topnav">
+<div class="topnav page-fadein" id="topnav">
   <div class="brand">
     <span class="safe-icon">
       <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -250,7 +247,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
 </div>
 
 <!-- MAIN PAGE -->
-<div class="page" id="page">
+<div class="page page-fadein" id="page">
 
   <!-- celebration header -->
   <div class="celeb-head" id="celebHead">
@@ -262,7 +259,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
   <!-- card preview -->
   <div class="preview-wrap" id="previewWrap">
     <div class="preview-frame">
-      <div class="mini-spotlight">
+      <div class="mini-spotlight" style="position:relative;">
+  <canvas id="miniSceneCanvas" style="position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;pointer-events:none;z-index:0;opacity:0;transition:opacity .4s;"></canvas>
         <div class="ms-top">
           <div class="ms-brand">VAULTIAC</div>
           <div class="ms-tag">card spotlight</div>
@@ -391,14 +389,201 @@ const COLOR_PRESETS = {
   rose:     'radial-gradient(circle at 50% 100%,#420d22,#1e0510 50%,#0a0208)',
 };
 
-const SCENE_LABELS = {
-  coins:    '🪙 Gold Coins',
-  vault:    '✨ Divine Light',
-  pedestal: '🏛 Pedestal',
-  stars:    '✨ Starfield',
-  velvet:   '🧪 Sewer',
-  trophy:   '🌧 Sad Rain',
+// ===== MINI SCENE ENGINE =====
+const r = (a,b) => a + Math.random()*(b-a);
+
+const _MINI_COINS=(()=>{
+  const a=[];
+  for(let i=0;i<40;i++){
+    const zone=Math.random(); let x,y,rad;
+    if(zone<.65){x=r(.05,.95);const hy=.62+(0.5-Math.abs(x-.5))*.35;y=r(hy,.98);rad=r(2,7);}
+    else if(zone<.82){x=r(0,.2);y=r(.3,.97);rad=r(2,5);}
+    else{x=r(.8,1);y=r(.3,.97);rad=r(2,5);}
+    a.push({x:x*340,y:y*420,rad,ry:rad*r(.18,.5),angle:r(-Math.PI,Math.PI),
+      driftAmp:r(0,.5),driftS:r(.3,.9),driftP:r(0,Math.PI*2),spkS:r(.4,1.4),spkP:r(0,Math.PI*2)});
+  }
+  return a.sort((a,b)=>a.y-b.y);
+})();
+const _MINI_MOTES=Array.from({length:14},()=>({x:r(.15,.85),y:r(0,1),rad:r(.3,.9),s:r(.003,.012),a:r(.15,.55),ts:r(.4,1.5),tp:r(0,Math.PI*2)}));
+const _MINI_STARS=Array.from({length:60},()=>({x:r(0,1),y:r(0,1),rad:r(.3,1.4),a:r(.3,.9),ts:r(.3,1.4),tp:r(0,Math.PI*2)}));
+const _MINI_MOTES_P=Array.from({length:14},()=>({x:r(.15,.85),y:r(0,1),rad:r(.2,.9),s:r(.003,.012),a:r(.15,.55),ts:r(.4,1.5),tp:r(0,Math.PI*2)}));
+const _MINI_LIGHT_MOTES=Array.from({length:12},()=>({x:r(.1,.9),y:r(0,1),rad:r(.3,.9),spd:r(.003,.009),dx:r(-.003,.003),a:r(.25,.65),ts:r(.4,1.5),tp:r(0,Math.PI*2)}));
+const _MINI_SEWER_BUBBLES=Array.from({length:10},()=>({x:r(.1,.9),y:r(.72,1),spd:r(.001,.004),rad:r(.8,2.5),a:r(.2,.5),ws:r(.3,.8),wp:r(0,Math.PI*2)}));
+const _MINI_SEWER_DRIPS=Array.from({length:7},()=>({x:r(.08,.92),startY:r(.02,.18),progress:r(0,1),spd:r(.002,.006),a:r(.4,.8)}));
+const _MINI_BG_RAIN=Array.from({length:55},()=>({x:r(0,1),y:r(0,1),spd:r(.008,.018),len:r(.04,.09),w:r(.3,.7),a:r(.12,.35)}));
+const _MINI_FG_DROPS=Array.from({length:14},()=>({x:r(.05,.95),y:r(0,1),spd:r(.004,.009),rad:r(.4,.9),a:r(.45,.82),ws:r(.3,.8),wp:r(0,Math.PI*2)}));
+const _MINI_RIPPLES=Array.from({length:7},()=>({x:r(0,1),y:r(.84,.98),age:r(0,2.5),life:r(1.2,2.8)}));
+
+function miniSceneCoins(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0d0800');bg.addColorStop(1,'#1a1000');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(W/2,H*.85,0,W/2,H*.85,W*.7);
+  glow.addColorStop(0,'rgba(200,140,10,.35)');glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+  _MINI_COINS.forEach(c=>{
+    const dy=c.driftAmp*Math.sin(t*c.driftS+c.driftP);
+    const spark=(Math.sin(t*c.spkS+c.spkP)+1)/2;
+    ctx.save();ctx.translate(c.x,c.y+dy);ctx.rotate(c.angle);
+    const g=ctx.createRadialGradient(-c.rad*.3,-c.ry*.4,c.rad*.05,0,0,c.rad);
+    g.addColorStop(0,'rgba(255,245,160,.95)');g.addColorStop(.35,'rgba(230,180,60,.9)');
+    g.addColorStop(.7,'rgba(180,120,20,.88)');g.addColorStop(1,'rgba(90,55,5,.8)');
+    ctx.beginPath();ctx.ellipse(0,0,c.rad,c.ry,0,0,Math.PI*2);
+    ctx.fillStyle=g;ctx.fill();
+    ctx.beginPath();ctx.ellipse(0,0,c.rad,c.ry,0,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(255,240,130,${.2+spark*.4})`;ctx.lineWidth=c.rad*.1;ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function miniSceneVault(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W/2,H*.45,0,W/2,H*.5,Math.max(W,H)*.95);
+  bg.addColorStop(0,'rgba(18,10,32,0)');bg.addColorStop(.5,'rgba(7,4,16,.7)');bg.addColorStop(1,'rgba(2,1,6,.96)');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  _MINI_LIGHT_MOTES.forEach(m=>{
+    m.y-=m.spd;m.x+=m.dx;
+    if(m.y<-.02)m.y=1.02;
+    if(m.x<.03)m.x=.97;if(m.x>.97)m.x=.03;
+    const tw=(Math.sin(t*m.ts+m.tp)+1)/2;
+    const rad=m.rad*(.6+tw*1.0);
+    const alp=m.a*(.5+tw*.65);
+    const mx=m.x*W,my=m.y*H;
+    const halo=ctx.createRadialGradient(mx,my,0,mx,my,rad*4.5);
+    halo.addColorStop(0,`rgba(255,248,180,${alp*.5})`);
+    halo.addColorStop(.4,`rgba(255,220,110,${alp*.18})`);
+    halo.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=halo;ctx.fillRect(mx-rad*5,my-rad*5,rad*10,rad*10);
+    ctx.beginPath();ctx.arc(mx,my,rad,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,252,205,${alp})`;ctx.fill();
+    const arm=rad*(2.5+tw*4.0);
+    ctx.lineCap='round';
+    ctx.strokeStyle=`rgba(255,248,190,${alp*(.45+tw*.45)})`;
+    ctx.lineWidth=rad*(.6+tw*.7);
+    ctx.beginPath();ctx.moveTo(mx-arm,my);ctx.lineTo(mx+arm,my);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(mx,my-arm);ctx.lineTo(mx,my+arm);ctx.stroke();
+  });
+  const vig=ctx.createRadialGradient(W/2,H*.45,H*.1,W/2,H*.45,H*.72);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(.55,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(4,2,10,.78)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+function miniScenePedestal(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W/2,H*.3,0,W/2,H*.5,H*.8);
+  bg.addColorStop(0,'#1a1428');bg.addColorStop(1,'#05030a');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const pulse=.85+.15*Math.sin(t*.55);
+  ctx.save();ctx.globalCompositeOperation='screen';
+  const beam=ctx.createRadialGradient(W/2,-H*.05,0,W/2,-H*.05,H*.9);
+  beam.addColorStop(0,`rgba(255,240,200,${.18*pulse})`);
+  beam.addColorStop(.2,`rgba(255,220,150,${.10*pulse})`);
+  beam.addColorStop(.6,'rgba(200,170,80,.03)');beam.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W*.15,H);ctx.lineTo(W*.85,H);ctx.closePath();
+  ctx.clip();ctx.fillStyle=beam;ctx.fillRect(0,0,W,H);
+  ctx.restore();
+  const pw=W*.44,ph=H*.22,px=(W-pw)/2,py=H*.68;
+  const top=ctx.createLinearGradient(px,py,px+pw,py+ph*.12);
+  top.addColorStop(0,'#c8bea8');top.addColorStop(.5,'#e8e0d0');top.addColorStop(1,'#a89880');
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+pw,py);ctx.lineTo(px+pw-pw*.08,py+ph*.12);ctx.lineTo(px+pw*.08,py+ph*.12);ctx.closePath();
+  ctx.fillStyle=top;ctx.fill();
+  const front=ctx.createLinearGradient(px,py,px,py+ph);
+  front.addColorStop(0,'#968878');front.addColorStop(.5,'#7a6c5e');front.addColorStop(1,'#504438');
+  ctx.beginPath();ctx.moveTo(px+pw*.08,py+ph*.12);ctx.lineTo(px+pw-pw*.08,py+ph*.12);ctx.lineTo(px+pw-pw*.04,py+ph);ctx.lineTo(px+pw*.04,py+ph);ctx.closePath();
+  ctx.fillStyle=front;ctx.fill();
+}
+
+function miniSceneStars(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W*.4,H*.3,0,W*.5,H*.5,H*.9);
+  bg.addColorStop(0,'#0a0620');bg.addColorStop(.4,'#060312');bg.addColorStop(1,'#020108');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  _MINI_STARS.forEach(s=>{
+    const tw=.3+(Math.sin(t*s.ts+s.tp)+1)/2*.7;
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.rad*tw,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${s.a*tw})`;ctx.fill();
+  });
+}
+
+function miniSceneVelvet(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W/2,H*.3,0,W/2,H*.5,H*.9);
+  bg.addColorStop(0,'#141a10');bg.addColorStop(.4,'#0c1209');bg.addColorStop(1,'#060806');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const waterY=H*.72;
+  const wg=ctx.createLinearGradient(0,waterY,0,H);
+  wg.addColorStop(0,'rgba(10,35,8,.92)');wg.addColorStop(1,'rgba(4,16,3,1)');
+  ctx.fillStyle=wg;ctx.fillRect(0,waterY,W,H-waterY);
+  [[W*.03,H*.1,H*.55,.9],[W*.93,H*.08,H*.5,.85]].forEach(([sx,sy,sh,alpha])=>{
+    const slg=ctx.createLinearGradient(sx,sy,sx,sy+sh);
+    slg.addColorStop(0,`rgba(20,90,10,0)`);slg.addColorStop(.3,`rgba(30,130,15,${alpha})`);slg.addColorStop(1,`rgba(15,70,8,0)`);
+    ctx.strokeStyle=slg;ctx.lineWidth=W*.006;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,sy+sh);ctx.stroke();
+  });
+  const glowPulse=.6+.4*Math.sin(t*.4);
+  const ag=ctx.createRadialGradient(W*.15,waterY,0,W*.15,waterY,W*.4);
+  ag.addColorStop(0,`rgba(30,120,15,${.18*glowPulse})`);ag.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=ag;ctx.fillRect(0,waterY-W*.2,W*.5,W*.5);
+  const vig=ctx.createRadialGradient(W/2,H*.4,H*.05,W/2,H*.4,H*.7);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(.5,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.82)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+function miniSceneTrophy(ctx,W,H,t){
+  ctx.clearRect(0,0,W,H);
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0d12');sky.addColorStop(1,'#060810');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  _MINI_BG_RAIN.forEach(d=>{
+    d.y+=d.spd;if(d.y>1.05){d.y=-.05;d.x=r(0,1);}
+    const rx=d.x*W,ry=d.y*H,len=d.len*H;
+    const grad=ctx.createLinearGradient(rx,ry,rx-len*.12,ry+len);
+    grad.addColorStop(0,`rgba(140,170,200,0)`);
+    grad.addColorStop(.3,`rgba(160,190,220,${d.a*.7})`);
+    grad.addColorStop(1,`rgba(180,210,240,0)`);
+    ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx-len*.12,ry+len);
+    ctx.strokeStyle=grad;ctx.lineWidth=d.w;ctx.stroke();
+  });
+  const vig=ctx.createRadialGradient(W/2,H*.45,H*.08,W/2,H*.45,H*.72);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(.45,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.78)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+const MINI_SCENE_FNS = {
+  coins: miniSceneCoins,
+  vault: miniSceneVault,
+  pedestal: miniScenePedestal,
+  stars: miniSceneStars,
+  velvet: miniSceneVelvet,
+  trophy: miniSceneTrophy,
 };
+
+let miniSceneRAF = null;
+
+function stopMiniScene(){
+  if(miniSceneRAF){ cancelAnimationFrame(miniSceneRAF); miniSceneRAF=null; }
+}
+
+function runMiniScene(key){
+  const miniCanvas = document.getElementById('miniSceneCanvas');
+  if(!miniCanvas || !MINI_SCENE_FNS[key]) return;
+  const miniCtx = miniCanvas.getContext('2d');
+  const spotlight = miniCanvas.parentElement;
+  // Use fixed dimensions — preview frame is always 340px wide on desktop, narrower on mobile
+  miniCanvas.width  = 340;
+  miniCanvas.height = 420;
+  spotlight.style.background = 'none';
+  miniCanvas.style.opacity = '1';
+  stopMiniScene();
+  let sceneT = null;
+  function loop(ts){
+    if(!sceneT) sceneT = ts;
+    MINI_SCENE_FNS[key](miniCtx, miniCanvas.width, miniCanvas.height, (ts-sceneT)/1000);
+    miniSceneRAF = requestAnimationFrame(loop);
+  }
+  miniSceneRAF = requestAnimationFrame(loop);
+}
 
 function applySpotlightBackground() {
   const raw = sessionStorage.getItem('vaultiac_spotlight_bg');
@@ -409,16 +594,8 @@ function applySpotlightBackground() {
     if (!miniFrame) return;
 
     if (state.type === 'scene' && state.scene) {
-      miniFrame.style.background = '#07050f';
-      const existing = miniFrame.querySelector('.scene-badge');
-      if (!existing) {
-        const badge = document.createElement('div');
-        badge.className = 'scene-badge';
-        badge.textContent = SCENE_LABELS[state.scene] || state.scene;
-        badge.style.cssText = 'position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:#e8c27a;background:rgba(0,0,0,.5);border:1px solid rgba(232,194,122,.3);border-radius:999px;padding:3px 10px;white-space:nowrap;z-index:5;';
-        miniFrame.style.position = 'relative';
-        miniFrame.appendChild(badge);
-      }
+      miniFrame.style.background = 'none';
+      runMiniScene(state.scene);
     } else if (state.type === 'color' && state.color) {
       miniFrame.style.background = COLOR_PRESETS[state.color] || COLOR_PRESETS.aurora;
     }
@@ -473,155 +650,18 @@ function applySpotlightBackground() {
   }
 })();
 
-applySpotlightBackground();
-
-// ===== COIN BURST =====
-const canvas = document.getElementById('coinCanvas');
-const ctx    = canvas.getContext('2d');
-
-function resize(){
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-const cx = () => canvas.width  / 2;
-const cy = () => canvas.height / 2;
-
-// Build coins — all launch from center with random outward velocity
-const COIN_COUNT = 160;
-const coins = Array.from({length: COIN_COUNT}, () => {
-  const angle  = Math.random() * Math.PI * 2;
-  const speed  = 8 + Math.random() * 22;      // faster launch
-  const r      = 7 + Math.random() * 16;      // bigger coins
-  const ry     = r * (0.18 + Math.random() * 0.38);
-  return {
-    x: 0, y: 0,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed - (6 + Math.random() * 12), // strong upward bias so they arc
-    gravity: 0.45 + Math.random() * 0.3,      // heavier gravity = visible fall
-    r, ry,
-    rot: Math.random() * Math.PI * 2,
-    rotV: (Math.random() - 0.5) * 0.35,
-    alpha: 1,
-    spkPhase: Math.random() * Math.PI * 2,
-    spkSpeed: 0.8 + Math.random() * 1.2,
-    landed: false,
-  };
-});
-
-let t0 = null;
-let burstDone = false;
-const BURST_DURATION = 2800; // longer so arc + fall is fully visible
-
-function drawCoin(c, t){
-  const spark = (Math.sin(t * c.spkSpeed + c.spkPhase) + 1) / 2;
-  ctx.save();
-  ctx.translate(cx() + c.x, cy() + c.y);
-  ctx.rotate(c.rot);
-  ctx.globalAlpha = c.alpha;
-
-  // coin body gradient
-  const g = ctx.createRadialGradient(-c.r * .28, -c.ry * .4, c.r * .04, 0, 0, c.r);
-  g.addColorStop(0,  'rgba(255,248,160,.97)');
-  g.addColorStop(.3, 'rgba(232,190,70,.95)');
-  g.addColorStop(.7, 'rgba(180,125,20,.92)');
-  g.addColorStop(1,  'rgba(90,55,5,.88)');
-
-  ctx.shadowColor  = 'rgba(232,190,70,.6)';
-  ctx.shadowBlur   = c.r * 1.8;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, c.r, c.ry, 0, 0, Math.PI * 2);
-  ctx.fillStyle = g;
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, c.r, c.ry, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(255,240,130,${.2 + spark * .5})`;
-  ctx.lineWidth = c.r * .09;
-  ctx.stroke();
-
-  // sparkle flash at peak shimmer
-  if(spark > .8){
-    const a = (spark - .8) / .2;
-    ctx.globalAlpha = c.alpha * a * .9;
-    // 4-point star
-    ctx.beginPath();
-    const sr = c.r * .3;
-    for(let i = 0; i < 8; i++){
-      const R = i % 2 === 0 ? sr : sr * .2;
-      const ang = i * Math.PI / 4 - Math.PI / 2;
-      i === 0
-        ? ctx.moveTo(Math.cos(ang)*R, Math.sin(ang)*R)
-        : ctx.lineTo(Math.cos(ang)*R, Math.sin(ang)*R);
-    }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,200,1)';
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function burstLoop(ts){
-  if(!t0) t0 = ts;
-  const elapsed = ts - t0;
-  const progress = Math.min(elapsed / BURST_DURATION, 1);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // no dark flash — coins appear instantly
-
-  coins.forEach(c => {
-    if(c.landed) return;
-    c.x  += c.vx;
-    c.y  += c.vy;
-    c.vy += c.gravity;
-    c.rot += c.rotV;
-
-    // only fade in the final 25% so fall arc is fully visible
-    if(progress > .75){
-      c.alpha = Math.max(0, 1 - (progress - .75) / .25);
-    }
-
-    // remove coins well off screen
-    const offscreen =
-      cx() + c.x < -120 || cx() + c.x > canvas.width + 120 ||
-      cy() + c.y > canvas.height + 120;
-    if(offscreen && progress > .5) c.landed = true;
-
-    drawCoin(c, elapsed / 1000);
-  });
-
-  if(progress < 1){
-    requestAnimationFrame(burstLoop);
-    // start revealing UI at 70% so it fades in while coins are still falling
-    if(progress > .7 && !burstDone){
-      burstDone = true;
-      revealUI();
-    }
-  } else {
-    canvas.classList.add('done');
-    setTimeout(() => { canvas.style.display = 'none'; }, 500);
-  }
-}
-
-requestAnimationFrame(burstLoop);
-
-// ===== REVEAL UI =====
-function revealUI(){
+// ===== INIT =====
+window.addEventListener('load', function() {
   document.getElementById('topnav').classList.add('visible');
   document.getElementById('page').classList.add('visible');
-  // stagger children
-  setTimeout(() => document.getElementById('celebHead').classList.add('visible'),   60);
-  setTimeout(() => document.getElementById('previewWrap').classList.add('visible'), 140);
-  setTimeout(() => document.getElementById('divider').classList.add('visible'),     240);
-  setTimeout(() => document.getElementById('shareGrid').classList.add('visible'),   320);
-  setTimeout(() => document.getElementById('downloadRow').classList.add('visible'), 400);
-  setTimeout(() => document.getElementById('startOver').classList.add('visible'),   480);
-}
+  document.getElementById('celebHead').classList.add('visible');
+  document.getElementById('previewWrap').classList.add('visible');
+  document.getElementById('divider').classList.add('visible');
+  document.getElementById('shareGrid').classList.add('visible');
+  document.getElementById('downloadRow').classList.add('visible');
+  document.getElementById('startOver').classList.add('visible');
+  applySpotlightBackground();
+});
 
 // ===== SHARE HANDLERS =====
 document.querySelectorAll('.share-btn[data-platform]').forEach(btn => {

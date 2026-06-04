@@ -7,7 +7,30 @@
       "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3000/\" -Method GET; Write-Host \"Status: $\\($r.StatusCode\\)\"; Write-Host \"Content-Type: $\\($r.Headers['Content-Type']\\)\"; $r.Content.Substring\\(0, 200\\))",
       "PowerShell($wc = New-Object System.Net.WebClient; $html = $wc.DownloadString\\(\"http://localhost:3000/\"\\); Write-Host \"Status: OK\"; Write-Host \"Length: $\\($html.Length\\)\"; $html.Substring\\(0, 300\\))",
       "PowerShell($r = Invoke-RestMethod -Uri \"http://localhost:3000/api/trivia/daily\" -UseBasicParsing; Write-Host \"pokemon_name:\" $r.pokemon_name; Write-Host \"clue count:\" $r.clues.Count; $r.clues | ForEach-Object { Write-Host \"  -\" $_ })",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\GitHub CLI\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\\\\gh\" -ErrorAction SilentlyContinue; winget list --id GitHub.cli 2>&1 | Select-Object -Last 5)",
+      "Bash(railway up *)",
+      "Bash(railway status *)",
+      "Bash(node seed-prod.js)",
+      "Bash(del seed-prod.js)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(railway logs *)",
+      "Bash(railway variables *)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); try{const j=JSON.parse\\(d\\); console.log\\('PUBLIC_URL:', j.DATABASE_PUBLIC_URL\\); console.log\\('PW:', j.PGPASSWORD\\);}catch\\(e\\){console.log\\(d.slice\\(0,500\\)\\);}\")",
+      "Bash(node -e \"const j=require\\('/tmp/pgvars.json'\\); console.log\\('URL:', j.DATABASE_PUBLIC_URL\\); console.log\\('PW:', j.PGPASSWORD\\);\")",
+      "Bash(node -e \"const j=require\\('C:/temp/pgvars.json'\\); console.log\\('URL:', j.DATABASE_PUBLIC_URL\\); console.log\\('PW:', j.PGPASSWORD\\);\")",
+      "Bash(mkdir -p /tmp)",
+      "Read(//tmp/**)",
+      "Bash(node -e \"process.stdin.resume\\(\\); let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\); console.log\\('PW:',j.PGPASSWORD\\); console.log\\('URL:',j.DATABASE_PUBLIC_URL\\);}catch\\(e\\){console.log\\(d.slice\\(0,800\\)\\);}}\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(railway service *)",
+      "PowerShell(railway --version 2>&1)",
+      "PowerShell(curl --version 2>&1)",
+      "PowerShell(head -1)"
     ]
   }
 }

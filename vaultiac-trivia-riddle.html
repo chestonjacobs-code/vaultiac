@@ -304,7 +304,7 @@ async function loadDailyTrivia() {
       <div style="font-size:32px;margin-bottom:16px;">✅</div>
       <div style="font-family:Fraunces,serif;font-weight:700;font-size:20px;margin-bottom:8px;">You've played today!</div>
       ${lastPokemon ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Today's Pokémon was <strong style="color:var(--paper);">${lastPokemon.charAt(0).toUpperCase() + lastPokemon.slice(1)}</strong></div>` : ''}
-      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow at 8AM for a new Pokémon.</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow at 12AM for a new Pokémon.</div>
     `;
     if (container) container.appendChild(lockEl);
     if (inputZone) inputZone.style.display = 'none';
@@ -383,7 +383,7 @@ function rebuildHidden() {
   list.querySelectorAll('.clue-hidden').forEach(el => el.remove());
 
   const remaining = PUZZLE.clues.length - currentClue;
-  for (let i = 0; i < Math.min(remaining, 3); i++) {
+  for (let i = 0; i < remaining; i++) {
     const ph = document.createElement('div');
     ph.className = 'clue-hidden';
     ph.innerHTML = `<span class="ci-num">${currentClue + i + 1}</span><div class="ci-dots"><span></span><span></span><span></span></div>`;

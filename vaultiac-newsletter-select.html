@@ -247,12 +247,21 @@ toggle.addEventListener('click', () => toggle.classList.toggle('on'));
   document.getElementById("suggestClose").addEventListener("click",close);
   overlay.addEventListener("click",close);
   document.getElementById("suggestInput").addEventListener("input",function(){document.getElementById("charCount").textContent=this.value.length;});
-  document.getElementById("suggestSubmit").addEventListener("click",function(){
+  document.getElementById("suggestSubmit").addEventListener("click",async function(){
     var val=document.getElementById("suggestInput").value.trim();
     if(!val)return;
     this.disabled=true;
-    document.getElementById("suggestSent").style.display="block";
-    setTimeout(close,1800);
+    this.textContent='Sending…';
+    var sentEl=document.getElementById("suggestSent");
+    try{
+      var res=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Vaultiac User',email:'',type:'Feature Request',message:val})});
+      sentEl.style.display='block';sentEl.classList.add('show');
+      if(res.ok){setTimeout(close,1800);}
+      else{sentEl.textContent='⚠ Could not send — try again.';this.disabled=false;this.textContent='Send Idea';}
+    }catch(err){
+      sentEl.style.display='block';sentEl.classList.add('show');
+      sentEl.textContent='⚠ Could not send — try again.';this.disabled=false;this.textContent='Send Idea';
+    }
   });
   var ty=0;
   panel.addEventListener("touchstart",function(e){ty=e.touches[0].clientY;},{passive:true});

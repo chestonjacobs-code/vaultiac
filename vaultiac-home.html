@@ -1514,12 +1514,21 @@ document.getElementById('mpCopyLink').addEventListener('click',()=>{
   document.getElementById('suggestInput').addEventListener('input',function(){
     document.getElementById('charCount').textContent=this.value.length;
   });
-  document.getElementById('suggestSubmit').addEventListener('click',function(){
+  document.getElementById('suggestSubmit').addEventListener('click',async function(){
     const val=document.getElementById('suggestInput').value.trim();
     if(!val) return;
     this.disabled=true;
-    document.getElementById('suggestSent').classList.add('show');
-    setTimeout(close,1800);
+    this.textContent='Sending…';
+    const sentEl=document.getElementById('suggestSent');
+    try{
+      const res=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Vaultiac User',email:'',type:'Feature Request',message:val})});
+      sentEl.classList.add('show');
+      if(res.ok){setTimeout(close,1800);}
+      else{sentEl.textContent='⚠ Could not send — try again.';this.disabled=false;this.textContent='Send Idea';}
+    }catch(err){
+      sentEl.classList.add('show');
+      sentEl.textContent='⚠ Could not send — try again.';this.disabled=false;this.textContent='Send Idea';
+    }
   });
   let ty=0;
   panel.addEventListener('touchstart',e=>{ty=e.touches[0].clientY;},{passive:true});

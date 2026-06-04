@@ -272,6 +272,18 @@ let maxPoints = 6;
 let gameOver = false;
 let username = localStorage.getItem('vaultiac_username') || 'Player';
 
+function getCurrentPeriod() {
+  const now = new Date();
+  const hour = now.getHours();
+  const base = hour < 8
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yyyy = base.getFullYear();
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const dd = String(base.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}-period2`;
+}
+
 // ===== LOAD DAILY TRIVIA =====
 async function loadDailyTrivia() {
   const clueContainer = document.getElementById('clueList') || document.querySelector('.clue-list');
@@ -279,37 +291,24 @@ async function loadDailyTrivia() {
 
   if (inputZone) inputZone.style.pointerEvents = 'none';
 
-  // ===== DAILY LOCK CHECK =====
-  try {
-    const statusRes = await fetch(`/api/trivia/status?username=${encodeURIComponent(username)}`);
-    const status = await statusRes.json();
+  // ===== DAILY LOCK CHECK (localStorage) =====
+  const currentPeriod = getCurrentPeriod();
+  const storedPeriod = localStorage.getItem('vaultiac_trivia_period');
 
-    if (!status.can_play) {
-      const nextReset = new Date(status.next_reset);
-      const resetStr = nextReset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const resetDateStr = nextReset.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-
-      // Show "come back tomorrow" message
-      const container = clueContainer || document.querySelector('.clues') || document.body;
-      const lockEl = document.createElement('div');
-      lockEl.style.cssText = 'text-align:center;padding:40px 20px;';
-      lockEl.innerHTML = `
-        <div style="font-size:32px;margin-bottom:16px;">✅</div>
-        <div style="font-family:Fraunces,serif;font-weight:700;font-size:20px;margin-bottom:8px;">You've played today!</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow for a new Pokémon.</div>
-        <div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 16px;display:inline-block;">
-          Next puzzle: <strong style="color:var(--gold);">${resetDateStr} at ${resetStr}</strong>
-        </div>
-      `;
-      if (container) container.appendChild(lockEl);
-
-      // Hide input
-      if (inputZone) inputZone.style.display = 'none';
-      return;
-    }
-  } catch (err) {
-    console.warn('Could not check trivia status:', err);
-    // Fail open — let them play if status check fails
+  if (storedPeriod === currentPeriod) {
+    const lastPokemon = localStorage.getItem('vaultiac_trivia_last');
+    const container = clueContainer || document.querySelector('.clues') || document.body;
+    const lockEl = document.createElement('div');
+    lockEl.style.cssText = 'text-align:center;padding:40px 20px;';
+    lockEl.innerHTML = `
+      <div style="font-size:32px;margin-bottom:16px;">✅</div>
+      <div style="font-family:Fraunces,serif;font-weight:700;font-size:20px;margin-bottom:8px;">You've played today!</div>
+      ${lastPokemon ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Today's Pokémon was <strong style="color:var(--paper);">${lastPokemon.charAt(0).toUpperCase() + lastPokemon.slice(1)}</strong></div>` : ''}
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow at 8AM for a new Pokémon.</div>
+    `;
+    if (container) container.appendChild(lockEl);
+    if (inputZone) inputZone.style.display = 'none';
+    return;
   }
   // ===== END DAILY LOCK CHECK =====
 
@@ -417,6 +416,8 @@ function checkGuess(val) {
     document.getElementById('inputZone').style.pointerEvents = 'none';
     showFeedback('Correct!', 'correct');
 
+    localStorage.setItem('vaultiac_trivia_period', getCurrentPeriod());
+    localStorage.setItem('vaultiac_trivia_last', PUZZLE.pokemonName);
     API.submitTrivia({
       username: username,
       pokemon_name: PUZZLE.pokemonName,
@@ -438,6 +439,8 @@ function checkGuess(val) {
       gameOver = true;
       document.getElementById('inputZone').style.pointerEvents = 'none';
 
+      localStorage.setItem('vaultiac_trivia_period', getCurrentPeriod());
+      localStorage.setItem('vaultiac_trivia_last', PUZZLE.pokemonName);
       API.submitTrivia({
         username: username,
         pokemon_name: PUZZLE.pokemonName,

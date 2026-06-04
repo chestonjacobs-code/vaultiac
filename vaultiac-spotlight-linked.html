@@ -539,6 +539,12 @@ setTimeout(injectCardData, 3400);
 
 // ---- SHARE CTA ----
 document.getElementById('shareCtaBtn').addEventListener('click', () => {
+  const state = {
+    type: currentScene ? 'scene' : 'color',
+    scene: currentScene || null,
+    color: currentColor || 'aurora',
+  };
+  sessionStorage.setItem('vaultiac_spotlight_bg', JSON.stringify(state));
   window.location.href = 'vaultiac-share.html';
 });
 

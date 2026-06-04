@@ -162,24 +162,21 @@ router.post('/submit', async (req, res) => {
     );
     let { total_points, current_streak, longest_streak, last_played_date } = rows[0];
 
+    const currentPeriod = getCurrentPeriod();
     if (correct) {
       total_points += points_earned;
       if (last_played_date === yesterday) {
         current_streak += 1;
-      } else if (last_played_date === today) {
-        // already played today — no change
-      } else {
+      } else if (last_played_date !== today) {
         current_streak = 1;
       }
       if (current_streak > longest_streak) longest_streak = current_streak;
       last_played_date = today;
-
-      const currentPeriod = getCurrentPeriod();
-      await pool.query(
-        'UPDATE leaderboard SET total_points=$1, current_streak=$2, longest_streak=$3, last_played_date=$4, daily_play_date=$5 WHERE username=$6',
-        [total_points, current_streak, longest_streak, last_played_date, currentPeriod, username]
-      );
     }
+    await pool.query(
+      'UPDATE leaderboard SET total_points=$1, current_streak=$2, longest_streak=$3, last_played_date=$4, daily_play_date=$5 WHERE username=$6',
+      [total_points, current_streak, longest_streak, last_played_date, currentPeriod, username]
+    );
 
     await pool.query(
       'INSERT INTO trivia_sessions (username, pokemon_name, clues_used, points_earned, solved, played_at) VALUES ($1,$2,$3,$4,$5,$6)',

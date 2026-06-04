@@ -19,6 +19,7 @@ app.use('/api/cards', require('./routes/cards'));
 app.use('/api/trivia', require('./routes/trivia'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/newsletter', require('./routes/newsletter'));
+app.use('/api/contact', require('./routes/contact'));
 
 // SPA fallback — serve homepage for any unmatched route
 app.get('*', (req, res) => {

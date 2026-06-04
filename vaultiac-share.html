@@ -379,6 +379,54 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
 <div class="toast" id="toast">✓ Link copied to clipboard</div>
 
 <script>
+// ===== BACKGROUND STATE MAPS =====
+const COLOR_PRESETS = {
+  aurora:   'radial-gradient(130% 50% at 50% 110%,rgba(232,194,122,.28),transparent 58%),linear-gradient(170deg,#16121e 0%,#0d0b12 55%,#120d1a 100%)',
+  midnight: 'linear-gradient(160deg,#0a0a1a,#0d0520 50%,#050010)',
+  ember:    'radial-gradient(circle at 50% 100%,#5a1500,#1a0500 50%,#0a0200)',
+  ocean:    'radial-gradient(circle at 50% 0%,#003a5a,#001a30 50%,#000810)',
+  forest:   'radial-gradient(circle at 50% 100%,#0d3010,#051808 50%,#020a02)',
+  void:     'radial-gradient(circle at 50% 50%,#22103a,#0a050f 60%,#020105)',
+  gold:     'radial-gradient(circle at 50% 20%,#3a2800,#1a1200 50%,#080600)',
+  rose:     'radial-gradient(circle at 50% 100%,#420d22,#1e0510 50%,#0a0208)',
+};
+
+const SCENE_LABELS = {
+  coins:    '🪙 Gold Coins',
+  vault:    '✨ Divine Light',
+  pedestal: '🏛 Pedestal',
+  stars:    '✨ Starfield',
+  velvet:   '🧪 Sewer',
+  trophy:   '🌧 Sad Rain',
+};
+
+function applySpotlightBackground() {
+  const raw = sessionStorage.getItem('vaultiac_spotlight_bg');
+  if (!raw) return;
+  try {
+    const state = JSON.parse(raw);
+    const miniFrame = document.querySelector('.mini-spotlight');
+    if (!miniFrame) return;
+
+    if (state.type === 'scene' && state.scene) {
+      miniFrame.style.background = '#07050f';
+      const existing = miniFrame.querySelector('.scene-badge');
+      if (!existing) {
+        const badge = document.createElement('div');
+        badge.className = 'scene-badge';
+        badge.textContent = SCENE_LABELS[state.scene] || state.scene;
+        badge.style.cssText = 'position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:#e8c27a;background:rgba(0,0,0,.5);border:1px solid rgba(232,194,122,.3);border-radius:999px;padding:3px 10px;white-space:nowrap;z-index:5;';
+        miniFrame.style.position = 'relative';
+        miniFrame.appendChild(badge);
+      }
+    } else if (state.type === 'color' && state.color) {
+      miniFrame.style.background = COLOR_PRESETS[state.color] || COLOR_PRESETS.aurora;
+    }
+  } catch(e) {
+    console.warn('applySpotlightBackground error:', e);
+  }
+}
+
 // ===== READ CARD DATA FROM SESSION =====
 (function loadCardData(){
   const raw = sessionStorage.getItem('vaultiac_card');
@@ -424,6 +472,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
     return {secret:'Secret Rare',ultra:'Ultra Rare',rare:'Holo Rare',common:'Common'}[r]||r;
   }
 })();
+
+applySpotlightBackground();
 
 // ===== COIN BURST =====
 const canvas = document.getElementById('coinCanvas');

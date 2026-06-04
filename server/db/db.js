@@ -58,6 +58,16 @@ async function initSchema() {
     await client.query(`
       ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS daily_play_date TEXT;
     `);
+    // Daily shared trivia cache — one Pokémon per day for all players
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS daily_trivia (
+        play_date DATE PRIMARY KEY,
+        pokemon_id INTEGER NOT NULL,
+        pokemon_name TEXT NOT NULL,
+        clues JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

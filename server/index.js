@@ -20,6 +20,12 @@ app.use('/api/trivia', require('./routes/trivia'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 
+// Temporary admin: force scrape (remove after confirming real data in DB)
+app.post('/api/admin/trigger-scrape', async (req, res) => {
+  const { runScrapeJob } = require('./jobs/newsletter-scrape');
+  runScrapeJob().then(() => res.json({ ok: true })).catch(err => res.status(500).json({ error: err.message }));
+});
+
 // SPA fallback — serve homepage for any unmatched route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../vaultiac-home.html'));

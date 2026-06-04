@@ -77,7 +77,7 @@ async function fetchCardPrice(card) {
     if (cards.length === 0) return null;
 
     const result = cards[0];
-    const price = result.price?.market || result.price?.mid || result.price?.low || null;
+    const price = result.prices?.market || result.prices?.low || null;
     if (!price) return null;
 
     return {

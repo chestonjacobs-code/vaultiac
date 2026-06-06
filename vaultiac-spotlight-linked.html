@@ -337,8 +337,8 @@ body{display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
       <div class="trend">▲ 12% this week</div>
     </div>
     <div class="sf-foot">
-      <div class="who">@cheston <span>· pulled this</span></div>
-      <div class="date">MAY 2026</div>
+      <div class="who" id="spotlightUser"></div>
+      <div class="date" id="spotlightDate"></div>
     </div>
 
     <!-- SHARE CTA — fixed bottom -->
@@ -1261,5 +1261,16 @@ document.getElementById('removeCustom').addEventListener('click',()=>{
 </script>
 
 <script src="/js/api.js"></script>
+<script>
+document.getElementById('spotlightDate').textContent =
+  new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+
+(function() {
+  const username = localStorage.getItem('vaultiac_username') || 'guest';
+  const handle = username.startsWith('@') ? username : '@' + username;
+  const el = document.getElementById('spotlightUser');
+  if (el) el.innerHTML = handle + ' <span style="color:var(--muted);font-weight:400;">· pulled this</span>';
+})();
+</script>
 </body>
 </html>

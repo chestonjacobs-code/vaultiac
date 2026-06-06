@@ -1,10 +1,11 @@
 # Vaultiac — PROJECT_STATUS.md
-Last Updated: June 3, 2026
+Last Updated: June 4, 2026
 
 ---
 
 ## Current Phase
 **Phase 1 Complete — MVP Live at vaultiac.com**
+**Post-Launch Bug Fix Session Complete (V016A–V017C)**
 
 ---
 
@@ -67,20 +68,42 @@ Last Updated: June 3, 2026
 ## Known Issues / Parked Work
 
 ### Next Up
-- **Social share image generation** — share buttons open toast only; need server-side image render to generate shareable spotlight PNG
-- **Real market data** — PokemonPriceTracker returns real prices but % change only meaningful after day 2 (first cron ran June 3 at 7AM)
+- **Social share image generation** (V016G) — share buttons open toast only; need server-side image render to generate shareable spotlight PNG
 - **Newsletter content** — all Coming Soon; not active yet
+- **Username system** — everyone defaults to "Player"; parked for future session
 
-### Confirmed Working After Last Session (V015A)
-- Scene animations (Starfield, Gold Coins, etc.) work behind card in spotlight
-- Color presets (Ember, Ocean, etc.) change frame background correctly
-- Root cause was duplicate `active` class on Colors tab pane in HTML — fixed
+### Confirmed Working After Last Session (V016F)
+- Trivia per-device lock via localStorage — each browser independent ✅
+- Market mover showing real PokemonPriceTracker data — was `result.price` typo, fixed to `result.prices` ✅
+- price_change_pct will show real deltas starting June 5 (first two real days of data)
+- Spotlight → Share scene/color passthrough via sessionStorage ✅
+- Contact form live at vaultiac.com/vaultiac-contact.html — sends via Resend to chestonmarketingco@gmail.com ✅
+- Suggestion panel wired to /api/contact on all 10 pages ✅
+- Friends tab invite button copies https://vaultiac.com ✅
+- Daily shared trivia Pokémon — everyone gets same Pokémon per day, cached in daily_trivia table ✅
+- Updated trivia clue format: Type → Habitat → Stage → Flavor text → Ability → Generation ✅
+
+### Confirmed Working After V017B (this session)
+- Trivia “come back” message updated to 12AM ✅
+- Share page: coin burst animation removed (was conflicting with mini scene canvas) ✅
+- Share page: replaced with clean CSS fade-in ✅
+- Share page: SCENE_LABELS dead code removed ✅
+- Mini scene canvas z-index, dimensions, and background clearing all corrected ✅
+
+### Confirmed Working After V017C
+- Trivia “come back” message: “Come back tomorrow at 12AM for a new Pokémon.” ✅
+- V017C prompt delivered and pushed to production
+
+### Outstanding — Carry to V017D
+- Share page scene preview still not rendering — verify coin burst removal is live in production first (hard refresh / cache clear)
+- If still broken after cache clear, debug mini scene canvas render with fresh eyes
 
 ### Parked Features (Future Sessions)
 - Sports Cards newsletter
 - One Piece TCG newsletter
 - Username system (currently defaults to "Player")
-- Friend leaderboards
+- Friend leaderboards (requires username system first)
+- Social share image generation
 
 ---
 
@@ -103,12 +126,12 @@ Z:\Vaultiac\
 ---
 
 ## Session Naming
-Last session ended at: **V015A**
-Next session starts at: **V016A**
+Last session ended at: **V017C**
+Next session starts at: **V017D**
 
 ---
 
 ## Next Session Checklist
-1. Check `https://vaultiac.com/api/newsletter/top-mover` — confirm `source` = `pokemonpricetracker` (first real data after 7AM June 4)
-2. Verify price_change_pct is non-zero (requires two consecutive days of data)
-3. Decide: social share image generation OR username system OR newsletter content
+1. Hard refresh share page in production — confirm coin burst is gone
+2. Verify scene background now renders in share page preview
+3. If still broken: fresh debug of mini scene canvas

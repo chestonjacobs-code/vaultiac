@@ -671,7 +671,7 @@ function renderPokemonGrid(){
         <span>${p.emoji}</span>
       </div>
       <div class="poke-name">${p.name}</div>
-      <div class="type-badge type-${p.type}">${p.type}</div>
+      <div style="margin-top:2px;">${typeIcon(p.type)}</div>
       <div class="poke-count">${p.count} cards</div>
     </button>
   `).join('');

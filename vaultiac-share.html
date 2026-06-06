@@ -109,7 +109,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
 .ms-price{font-family:"Fraunces",serif;font-weight:900;font-size:18px;
   background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .ms-trend{font-size:9px;font-weight:600;color:#7ce8d6;background:rgba(124,232,214,.1);border:1px solid rgba(124,232,214,.25);padding:3px 8px;border-radius:999px;}
-.ms-foot{width:100%;display:flex;justify-content:space-between;font-size:9px;border-top:1px solid rgba(255,255,255,.08);padding-top:8px;}
+.ms-foot{width:100%;display:flex;justify-content:space-between;font-size:9px;border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:auto;}
 .ms-foot .who{font-weight:600;color:var(--paper);}
 .ms-foot .date{color:var(--muted);}
 /* preview sheen sweep */
@@ -217,6 +217,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
 
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -665,7 +666,7 @@ window.addEventListener('load', function() {
 
 // ===== SHARE HANDLERS =====
 document.querySelectorAll('.share-btn[data-platform]').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const platform = btn.dataset.platform;
     if(platform === 'copy'){
       // copy current URL (mockup — real app copies spotlight URL)
@@ -676,18 +677,60 @@ document.querySelectorAll('.share-btn[data-platform]').forEach(btn => {
     // In real app: export spotlight as image, then open platform share URL
     // For mockup: show feedback toast
     const messages = {
-      instagram: '📸 Opening Instagram…',
-      twitter:   '𝕏 Opening X / Twitter…',
-      tiktok:    '🎵 Opening TikTok…',
-      snapchat:  '👻 Opening Snapchat…',
-      pinterest: '📌 Opening Pinterest…',
+      instagram: '📸 Image saved — open Instagram to post',
+      twitter:   '𝕏 Image saved — open X to post',
+      tiktok:    '🎵 Image saved — open TikTok to post',
+      snapchat:  '👻 Image saved — open Snapchat to post',
+      pinterest: '📌 Image saved — open Pinterest to post',
     };
-    showToast(messages[platform] || 'Opening…');
+    // Export image first, then show instructions
+    try {
+      const target = document.querySelector('.mini-spotlight');
+      const canvas = await html2canvas(target, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        scale: 3,
+        logging: false,
+      });
+      const link = document.createElement('a');
+      link.download = 'vaultiac-spotlight.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch(e) {
+      console.error('Export error:', e);
+    }
+    showToast(messages[platform] || 'Image saved!');
   });
 });
 
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  showToast('↓ Image saved — (live in real app)');
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('downloadBtn');
+  btn.textContent = 'Generating image…';
+  btn.disabled = true;
+
+  try {
+    const target = document.querySelector('.mini-spotlight');
+    const canvas = await html2canvas(target, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      scale: 3,
+      logging: false,
+    });
+
+    const link = document.createElement('a');
+    link.download = 'vaultiac-spotlight.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✓ Image saved!');
+  } catch(e) {
+    console.error('Export error:', e);
+    showToast('⚠ Could not export — try again');
+  } finally {
+    btn.textContent = '↓  Save image to camera roll';
+    btn.disabled = false;
+  }
 });
 
 function showToast(msg){

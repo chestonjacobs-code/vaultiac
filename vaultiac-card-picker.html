@@ -162,6 +162,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .type-colorless{background:rgba(180,170,160,.15);color:#c8bfb0;border:1px solid rgba(180,170,160,.2);}
 .type-dark{background:rgba(60,40,90,.4);color:#a080d0;border:1px solid rgba(100,70,150,.3);}
 .type-metal{background:rgba(120,130,150,.15);color:#a0aec0;border:1px solid rgba(120,130,150,.25);}
+.type-fighting{background:rgba(239,108,0,.15);color:#ff8c40;border:1px solid rgba(239,108,0,.25);}
 
 .sprite-fire{background:radial-gradient(circle,rgba(255,80,20,.25),transparent 70%);border:2px solid rgba(255,80,20,.3);}
 .sprite-water{background:radial-gradient(circle,rgba(30,120,255,.25),transparent 70%);border:2px solid rgba(30,120,255,.3);}
@@ -172,6 +173,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .sprite-colorless{background:radial-gradient(circle,rgba(160,150,140,.2),transparent 70%);border:2px solid rgba(160,150,140,.2);}
 .sprite-dark{background:radial-gradient(circle,rgba(60,30,90,.4),transparent 70%);border:2px solid rgba(80,50,120,.3);}
 .sprite-metal{background:radial-gradient(circle,rgba(120,130,150,.25),transparent 70%);border:2px solid rgba(120,130,150,.25);}
+.sprite-fighting{background:radial-gradient(circle,rgba(239,108,0,.25),transparent 70%);border:2px solid rgba(239,108,0,.3);}
 
 /* ===== SET BROWSE MODE ===== */
 .set-section{
@@ -491,25 +493,46 @@ const TYPE_COLORS = {
   colorless:{ bg: '#E0E0E0', label: 'Colorless' },
 };
 
+// Official Pokémon TCG energy type emojis + colors
+const TYPE_SYMBOLS = {
+  fire:      { emoji: '🔥', color: '#FF6B35', label: 'Fire' },
+  water:     { emoji: '💧', color: '#4FC3F7', label: 'Water' },
+  grass:     { emoji: '🌿', color: '#66BB6A', label: 'Grass' },
+  lightning: { emoji: '⚡', color: '#FFD54F', label: 'Lightning' },
+  electric:  { emoji: '⚡', color: '#FFD54F', label: 'Lightning' },
+  psychic:   { emoji: '🔮', color: '#F48FB1', label: 'Psychic' },
+  fighting:  { emoji: '👊', color: '#EF6C00', label: 'Fighting' },
+  darkness:  { emoji: '🌑', color: '#9575CD', label: 'Darkness' },
+  dark:      { emoji: '🌑', color: '#9575CD', label: 'Darkness' },
+  metal:     { emoji: '⚙️', color: '#90A4AE', label: 'Metal' },
+  steel:     { emoji: '⚙️', color: '#90A4AE', label: 'Metal' },
+  fairy:     { emoji: '🌸', color: '#F8BBD9', label: 'Fairy' },
+  dragon:    { emoji: '🐉', color: '#7E57C2', label: 'Dragon' },
+  colorless: { emoji: '⭐', color: '#BDBDBD', label: 'Colorless' },
+  normal:    { emoji: '⭐', color: '#BDBDBD', label: 'Colorless' },
+  ice:       { emoji: '❄️', color: '#80DEEA', label: 'Water' },
+  poison:    { emoji: '☠️', color: '#AB47BC', label: 'Psychic' },
+  ground:    { emoji: '🌍', color: '#D4A058', label: 'Fighting' },
+  rock:      { emoji: '🪨', color: '#A1887F', label: 'Fighting' },
+  bug:       { emoji: '🐛', color: '#AED581', label: 'Grass' },
+  ghost:     { emoji: '👻', color: '#7986CB', label: 'Psychic' },
+  flying:    { emoji: '🌬️', color: '#90CAF9', label: 'Colorless' },
+};
+
 function typeIcon(typeName) {
   if (!typeName) return '';
   const key = typeName.toLowerCase();
-  const info = TYPE_COLORS[key] || { bg: '#9E9E9E', label: typeName };
-  const imgUrl = `https://images.pokemontcg.io/symbols/energy/${key}.png`;
+  const info = TYPE_SYMBOLS[key] || { emoji: '❓', color: '#9E9E9E', label: typeName };
   return `<span style="
-    display:inline-flex;align-items:center;gap:4px;
-    background:${info.bg}22;
-    border:1px solid ${info.bg}66;
+    display:inline-flex;align-items:center;gap:3px;
+    background:${info.color}22;
+    border:1px solid ${info.color}55;
     border-radius:999px;
-    padding:2px 8px 2px 4px;
+    padding:2px 8px;
     font-size:10px;font-weight:700;
-    color:${info.bg};
+    color:${info.color};
     vertical-align:middle;
-  ">
-    <img src="${imgUrl}" alt="${info.label}" style="width:14px;height:14px;object-fit:contain;"
-      onerror="this.style.display='none'"/>
-    ${info.label}
-  </span>`;
+  ">${info.emoji} ${info.label}</span>`;
 }
 
 // ===== DATA =====
@@ -529,7 +552,7 @@ const POKEMON = [
   {name:'Gyarados',    type:'water',     emoji:'🌀', count:46},
   {name:'Dragonite',   type:'dragon',    emoji:'🐲', count:41},
   {name:'Espeon',      type:'psychic',   emoji:'🔯', count:38},
-  {name:'Machamp',     type:'colorless', emoji:'💪', count:29},
+  {name:'Machamp',     type:'fighting',  emoji:'💪', count:29},
   {name:'Alakazam',    type:'psychic',   emoji:'🥄', count:31},
   {name:'Scizor',      type:'metal',     emoji:'✂️', count:28},
   {name:'Tyranitar',   type:'dark',      emoji:'🦖', count:36},

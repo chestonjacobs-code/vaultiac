@@ -94,9 +94,60 @@ Last Updated: June 4, 2026
 - Trivia “come back” message: “Come back tomorrow at 12AM for a new Pokémon.” ✅
 - V017C prompt delivered and pushed to production
 
-### Outstanding — Carry to V017D
-- Share page scene preview still not rendering — verify coin burst removal is live in production first (hard refresh / cache clear)
-- If still broken after cache clear, debug mini scene canvas render with fresh eyes
+### Confirmed Fixed — V017D (this session)
+- Deploy pipeline broken — local branch was `master`, Railway was watching `main` ✅
+- Renamed local branch `master` → `main` ✅
+- Deleted remote `master` branch ✅
+- Fixed upstream tracking to `origin/main` ✅
+- Railway reconnected to `main` branch — auto-deploy restored ✅
+
+### Confirmed Fixed — V017E
+- Share page scene preview now rendering correctly ✅
+- Removed fake card content (setbar, Prism Veil, Lumen Burst, botrow) from spotlight card widget ✅
+- Real card image now fills full frame below name/HP row ✅
+
+### Confirmed Fixed — V017F
+- Spotlight card height increased to min(62vh,380px) — full card visible ✅
+- Share preview card scaled down to 70px for more scene visibility ✅
+
+### Confirmed Fixed — V017G
+- Share preview card further reduced to 52px, padding/gap tightened ✅
+- Full scene background now visible in share preview ✅
+
+### Confirmed Fixed — V017H
+- Share preview footer pinned to bottom via margin-top:auto ✅
+- Real image export added via html2canvas (3x resolution PNG) ✅
+- Share buttons now download image before showing toast ✅
+
+### Confirmed Fixed — V017I
+- Share preview layout rebalanced — card 90px, text scaled up ✅
+- Toast messages updated to "Saved to downloads — post from [platform]" ✅
+
+### Confirmed Fixed — V017J
+- Share preview card bumped to 130px, min-height 420px ✅
+
+### Confirmed Fixed — V017K
+- Share preview card bumped to 160px, min-height 480px ✅
+
+### Confirmed Fixed — V017L
+- Type icons in card picker replaced with emoji+color badge system ✅
+- Machamp corrected from colorless → fighting ✅
+- Fighting type CSS classes added ✅
+
+### Confirmed Fixed — V017M
+- typeIcon() wired into static pokemon grid badges ✅
+
+### Confirmed Fixed — V017N
+- hydratePokeTypes() added (later removed in V017O) ✅
+
+### Confirmed Fixed — V017O
+- Removed TCG hydration, hardcoded correct video game types for all 24 Pokémon ✅
+- Gengar → Ghost, Lugia → Flying, Eevee/Snorlax → Normal, Sylveon → Fairy, Glaceon → Ice, Scizor → Steel, Togekiss → Flying ✅
+- Added missing CSS classes for ghost, normal, fairy, ice, steel, flying ✅
+- Fixed TYPE_SYMBOLS labels for ghost, normal, ice, flying ✅
+
+### Confirmed Fixed — V017P
+- Fixed ‘Darkness’ label → ‘Dark’ for video game naming consistency ✅
 
 ### Parked Features (Future Sessions)
 - Sports Cards newsletter
@@ -126,12 +177,16 @@ Z:\Vaultiac\
 ---
 
 ## Session Naming
-Last session ended at: **V017C**
-Next session starts at: **V017D**
+Last session ended at: **V017Q**
+Next session starts at: **V017R**
 
 ---
 
 ## Next Session Checklist
-1. Hard refresh share page in production — confirm coin burst is gone
-2. Verify scene background now renders in share page preview
-3. If still broken: fresh debug of mini scene canvas
+1. Verify type badges display correctly on card picker grid in production
+2. Verify new trivia clue order after 8AM reset
+3. **V017R FOCUS — Leaderboard & Friends Feature:**
+   - Username system — let users set a real username (currently everyone is 'Player')
+   - Real leaderboard — scores tied to actual accounts
+   - Friends tab — add friends by username, see their leaderboard
+   - Interactive leaderboard — live scores between linked accounts

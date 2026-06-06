@@ -44,25 +44,7 @@ function buildClues(pokemon, speciesData, stage, flavorText) {
   const typeStr = types.length > 1 ? `${types[0]} and ${types[1]} type` : `${types[0]} type`;
   const clue1 = `This Pokémon is a ${typeStr} Pokémon.`;
 
-  // Clue 2 — Habitat
-  const habitat = speciesData.habitat ? speciesData.habitat.name.replace('-', ' ') : 'unknown habitat';
-  const clue2 = `This Pokémon can be found in the ${habitat}.`;
-
-  // Clue 3 — Evolution stage
-  const stageNum = stage || 1;
-  const clue3 = `This is a Stage ${stageNum} Pokémon.`;
-
-  // Clue 4 — Flavor text (Pokédex entry)
-  const clue4 = flavorText
-    ? flavorText
-    : `This Pokémon is a mysterious creature with unique abilities.`;
-
-  // Clue 5 — Ability
-  const abilities = pokemon.abilities.map(a => a.ability.name.replace('-', ' '));
-  const ability = abilities[0].charAt(0).toUpperCase() + abilities[0].slice(1);
-  const clue5 = `One of this Pokémon's abilities is ${ability}.`;
-
-  // Clue 6 — Generation
+  // Clue 2 — Generation
   const genRaw = speciesData.generation ? speciesData.generation.name : 'generation-i';
   const genMap = {
     'generation-i': 'Generation I', 'generation-ii': 'Generation II',
@@ -72,7 +54,28 @@ function buildClues(pokemon, speciesData, stage, flavorText) {
     'generation-ix': 'Generation IX'
   };
   const gen = genMap[genRaw] || genRaw;
-  const clue6 = `This Pokémon was introduced in ${gen}.`;
+  const clue2 = `This Pokémon was introduced in ${gen}.`;
+
+  // Clue 3 — Color
+  const color = speciesData.color ? speciesData.color.name.charAt(0).toUpperCase() + speciesData.color.name.slice(1) : 'unknown';
+  const clue3 = `This Pokémon is primarily ${color} in color.`;
+
+  // Clue 4 — Evolution stage
+  const stageNum = stage || 1;
+  const stageLabel = stageNum === 1 ? 'a Basic' : stageNum === 2 ? 'a Stage 1' : 'a Stage 2';
+  const clue4 = `This is ${stageLabel} Pokémon.`;
+
+  // Clue 5 — Flavor text (Pokédex entry)
+  const clue5 = flavorText
+    ? flavorText
+    : `This Pokémon is a mysterious creature found across many regions.`;
+
+  // Clue 6 — Category (Legendary / Mythical / Baby / Common)
+  let category = 'a common';
+  if (speciesData.is_legendary) category = 'a Legendary';
+  else if (speciesData.is_mythical) category = 'a Mythical';
+  else if (speciesData.is_baby) category = 'a Baby';
+  const clue6 = `This Pokémon is ${category} Pokémon.`;
 
   return [clue1, clue2, clue3, clue4, clue5, clue6];
 }

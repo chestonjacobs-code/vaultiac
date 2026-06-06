@@ -1062,6 +1062,34 @@ document.getElementById('ctaBtn').addEventListener('click', () => {
 // ===== INIT =====
 renderPokemonGrid();
 renderSets();
+
+// Fetch correct TCG types for the static grid on load
+async function hydratePokeTypes() {
+  for (const p of POKEMON) {
+    try {
+      const data = await API.searchCards(p.name);
+      const cards = data.data || [];
+      if (cards.length > 0) {
+        // Find the most common type across results
+        const typeCounts = {};
+        cards.slice(0, 10).forEach(card => {
+          (card.types || []).forEach(t => {
+            const key = t.toLowerCase();
+            typeCounts[key] = (typeCounts[key] || 0) + 1;
+          });
+        });
+        const topType = Object.entries(typeCounts).sort((a,b) => b[1]-a[1])[0];
+        if (topType) {
+          p.type = topType[0];
+        }
+      }
+    } catch(e) {
+      // keep existing type on error
+    }
+  }
+  renderPokemonGrid();
+}
+hydratePokeTypes();
 </script>
 
 <!-- SUGGESTION FOOTER -->

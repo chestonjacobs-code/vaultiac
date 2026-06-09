@@ -612,7 +612,7 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
   <div class="nav-links">
     <a class="nav-link" href="#features">Features</a>
     <a class="nav-link" href="#spotlight">Card Spotlight</a>
-    <a class="nav-cta" href="vaultiac-card-picker.html">Try it free</a>
+    <button class="nav-cta" onclick="window.vaultiacOpenAuth('signup')">Sign Up Free</button>
   </div>
 </nav>
 
@@ -1536,5 +1536,6 @@ document.getElementById('mpCopyLink').addEventListener('click',()=>{
 })();
 </script>
 <script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
 </body>
 </html>

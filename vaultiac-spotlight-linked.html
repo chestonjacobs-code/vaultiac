@@ -236,7 +236,7 @@ body{display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
 .remove-custom:hover{background:rgba(255,60,60,.15);}
 
 /* share CTA */
-.share-cta{position:absolute;top:14px;right:14px;z-index:13;}
+.share-cta{position:absolute;top:14px;right:14px;z-index:13;display:none;}
 .share-cta-btn{font-family:"Hanken Grotesk",sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;
   background:linear-gradient(90deg,#c8a855,#e8c27a,#e8d890);color:#0c0a10;
   border:none;border-radius:10px;padding:9px 14px;cursor:pointer;
@@ -1255,6 +1255,7 @@ document.getElementById('removeCustom').addEventListener('click',()=>{
 </script>
 
 <script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
 <script>
 document.getElementById('spotlightDate').textContent =
   new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
@@ -1265,6 +1266,12 @@ document.getElementById('spotlightDate').textContent =
   const el = document.getElementById('spotlightUser');
   if (el) el.innerHTML = handle + ' <span style="color:var(--muted);font-weight:400;">· pulled this</span>';
 })();
+
+// Show share CTA only after vault intro clears
+setTimeout(() => {
+  const shareCta = document.getElementById('shareCta');
+  if (shareCta) shareCta.style.display = 'block';
+}, 3400);
 </script>
 </body>
 </html>

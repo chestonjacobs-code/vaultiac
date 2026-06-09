@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Leaderboard — VAULTIAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0a10;--paper:#f3eee6;--muted:#7a7488;--muted2:#9a93a6;--line:rgba(255,255,255,.09);
+  --gold:#e8c27a;--gold2:#f5d99a;--surface:#141220;--surface2:#1a1728;--surface3:#211e30;
+  --holo1:#7ce8d6;--holo2:#a78bfa;--holo3:#f0a6c8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--ink);color:var(--paper);overflow-x:hidden;}
+body{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* NAV */
+.topnav{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 20px 0;
+}
+.brand{display:flex;align-items:center;gap:8px;font-family:"Fraunces",serif;font-weight:900;font-size:17px;letter-spacing:.04em;
+  background:linear-gradient(120deg,#fff,var(--gold),#ffe9b0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.safe-icon svg{width:18px;height:18px;}
+.back-link{font-size:12px;font-weight:600;color:var(--muted);text-decoration:none;
+  background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 12px;transition:.2s;}
+.back-link:hover{color:var(--paper);border-color:rgba(255,255,255,.18);}
+
+/* PAGE HEADER */
+.page-head{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:28px 20px 0;
+  opacity:0;animation:rise .6s .1s ease forwards;
+}
+.eyebrow{font-size:10px;letter-spacing:.44em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;}
+.page-head h1{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,6vw,36px);line-height:1.05;letter-spacing:-.02em;}
+.page-head h1 em{font-style:normal;background:linear-gradient(90deg,var(--gold),var(--holo2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.page-head p{color:var(--muted2);font-size:13px;margin-top:8px;line-height:1.5;}
+
+/* PERIOD TOGGLE */
+.period-toggle{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:20px 20px 0;
+  opacity:0;animation:rise .6s .16s ease forwards;
+}
+.toggle-track{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;}
+.toggle-btn{
+  flex:1;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);background:none;border:none;cursor:pointer;padding:9px 8px;border-radius:9px;transition:.25s;
+}
+.toggle-btn.active{background:var(--surface3);color:var(--paper);box-shadow:0 2px 10px rgba(0,0,0,.35);}
+
+/* YOUR STANDING CARD */
+.your-card-wrap{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:16px 20px 0;
+  opacity:0;animation:rise .6s .22s ease forwards;
+}
+#yourCard{
+  background:var(--surface2);
+  border:1px solid rgba(232,194,122,.2);
+  border-radius:18px;padding:18px 20px;
+  position:relative;overflow:hidden;
+  display:none;
+}
+#yourCard::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(80% 50% at 50% 0%,rgba(232,194,122,.07),transparent 70%);
+}
+.yc-label{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:14px;}
+.yc-main{display:flex;align-items:center;gap:14px;}
+.yc-rank{
+  width:48px;height:48px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(232,194,122,.18),rgba(232,194,122,.06));
+  border:1px solid rgba(232,194,122,.22);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Fraunces",serif;font-weight:900;font-size:22px;color:var(--gold);flex:none;
+}
+.yc-info{flex:1;min-width:0;}
+.yc-handle{font-weight:700;font-size:15px;margin-bottom:3px;}
+.yc-meta{font-size:11px;color:var(--muted2);}
+.yc-stats{display:flex;gap:8px;flex:none;}
+.yc-stat{text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;}
+.yc-stat .sv{font-family:"Fraunces",serif;font-weight:900;font-size:16px;color:var(--gold);}
+.yc-stat .sl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+
+/* Guest prompt */
+#guestPrompt{
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  padding:20px;text-align:center;display:none;
+}
+.guest-icon{font-size:28px;margin-bottom:10px;}
+.guest-title{font-family:"Fraunces",serif;font-weight:600;font-size:16px;margin-bottom:6px;}
+.guest-sub{font-size:12px;color:var(--muted2);line-height:1.5;margin-bottom:14px;}
+.guest-cta{
+  font-family:inherit;font-size:13px;font-weight:700;
+  background:linear-gradient(90deg,#c8a855,var(--gold),#e8d890);
+  color:#0c0a10;border:none;border-radius:10px;padding:11px 22px;cursor:pointer;transition:.2s;
+}
+.guest-cta:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(232,194,122,.3);}
+
+/* LEADERBOARD LIST */
+.lb-section{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:20px 20px 0;
+  opacity:0;animation:rise .6s .28s ease forwards;
+}
+.lb-section-label{font-size:10px;letter-spacing:.35em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px;}
+.lb-row{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  transition:.2s;
+}
+.lb-row.highlighted{border-color:rgba(232,194,122,.3);background:rgba(232,194,122,.04);}
+.lb-row:hover{border-color:rgba(255,255,255,.15);}
+.lb-rank{width:28px;font-family:"Fraunces",serif;font-weight:900;font-size:15px;color:var(--muted);text-align:center;flex:none;}
+.lb-rank.gold{color:#ffd700;}
+.lb-rank.silver{color:#c0c0c0;}
+.lb-rank.bronze{color:#cd7f32;}
+.lb-medal{font-size:18px;width:28px;text-align:center;flex:none;}
+.lb-avatar{
+  width:36px;height:36px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;background:var(--surface2);border:1px solid var(--line);
+}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.lb-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;}
+.lb-score{font-family:"Fraunces",serif;font-weight:700;font-size:16px;color:var(--gold);}
+.lb-streak{font-size:11px;font-weight:700;color:var(--gold);background:rgba(232,194,122,.08);border:1px solid rgba(232,194,122,.18);padding:2px 8px;border-radius:999px;}
+
+/* LOADING SKELETON */
+.skeleton{
+  background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;
+  border-radius:8px;height:14px;
+}
+@keyframes shimmer{from{background-position:200% 0;}to{background-position:-200% 0;}}
+.lb-row.loading .lb-name{width:120px;}
+.lb-row.loading .lb-sub{width:80px;height:11px;margin-top:4px;}
+.lb-row.loading .lb-score{width:50px;height:16px;}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="brand">
+    <span class="safe-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="16" height="13" rx="2" stroke="#e8c27a" stroke-width="1.5"/>
+        <rect x="4.5" y="6.5" width="8" height="7" rx="1" stroke="#e8c27a" stroke-width="1" opacity="0.5"/>
+        <circle cx="8.5" cy="10" r="1.6" stroke="#e8c27a" stroke-width="1.2"/>
+        <path d="M7.5 8.5 Q7.5 6.8 8.5 6.8 Q9.5 6.8 9.5 8.5" stroke="#e8c27a" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="15" y1="9" x2="15" y2="11" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="4" cy="7.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <circle cx="4" cy="12.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <line x1="5" y1="17" x2="5" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="15" y1="17" x2="15" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    VAULTIAC
+  </div>
+  <a class="back-link" href="vaultiac-trivia-riddle.html">&#x2190; Daily Riddle</a>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-head">
+  <div class="eyebrow">Hall of Fame</div>
+  <h1>The <em>Leaderboard.</em></h1>
+  <p>Top streaks and highest scores across the Vaultiac daily riddle.</p>
+</div>
+
+<!-- PERIOD TOGGLE -->
+<div class="period-toggle">
+  <div class="toggle-track">
+    <button class="toggle-btn active" data-period="streak">&#x1F525; Streak</button>
+    <button class="toggle-btn" data-period="alltime">&#x2605; All-Time Score</button>
+    <button class="toggle-btn" data-period="weekly">&#x1F4C5; This Week</button>
+  </div>
+</div>
+
+<!-- YOUR STANDING -->
+<div class="your-card-wrap">
+  <div id="yourCard">
+    <div class="yc-label">Your Standing</div>
+    <div class="yc-main">
+      <div class="yc-rank" id="ycRank">—</div>
+      <div class="yc-info">
+        <div class="yc-handle" id="ycHandle">@—</div>
+        <div class="yc-meta" id="ycMeta">Loading your stats...</div>
+      </div>
+      <div class="yc-stats">
+        <div class="yc-stat">
+          <div class="sv" id="ycStreak">0</div>
+          <div class="sl">Streak</div>
+        </div>
+        <div class="yc-stat">
+          <div class="sv" id="ycBest">0</div>
+          <div class="sl">Best</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="guestPrompt">
+    <div class="guest-icon">&#x1F3C6;</div>
+    <div class="guest-title">Track your standing</div>
+    <div class="guest-sub">Create a free account to save your streak and appear on the leaderboard.</div>
+    <button class="guest-cta" onclick="window.location.href='vaultiac-home.html#signup'">Sign up free &#x2192;</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD LIST -->
+<div class="lb-section">
+  <div class="lb-section-label" id="lbSectionLabel">Top Streaks</div>
+  <div id="lbList">
+    <!-- Loading skeletons -->
+    <div class="lb-row loading">
+      <div class="lb-rank"><div class="skeleton" style="width:20px;height:16px;"></div></div>
+      <div class="lb-avatar"></div>
+      <div class="lb-info"><div class="lb-name skeleton"></div><div class="lb-sub skeleton"></div></div>
+      <div class="lb-right"><div class="lb-score skeleton"></div></div>
+    </div>
+    <div class="lb-row loading">
+      <div class="lb-rank"><div class="skeleton" style="width:20px;height:16px;"></div></div>
+      <div class="lb-avatar"></div>
+      <div class="lb-info"><div class="lb-name skeleton"></div><div class="lb-sub skeleton"></div></div>
+      <div class="lb-right"><div class="lb-score skeleton"></div></div>
+    </div>
+    <div class="lb-row loading">
+      <div class="lb-rank"><div class="skeleton" style="width:20px;height:16px;"></div></div>
+      <div class="lb-avatar"></div>
+      <div class="lb-info"><div class="lb-name skeleton"></div><div class="lb-sub skeleton"></div></div>
+      <div class="lb-right"><div class="lb-score skeleton"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== FALLBACK DATA (used when API is unavailable) =====
+const FALLBACK_ENTRIES = [
+  { username:'vaultking',     current_streak:14, longest_streak:22, total_score:6800, weekly_score:1200 },
+  { username:'charizardfan', current_streak:9,  longest_streak:15, total_score:4200, weekly_score:900  },
+  { username:'psagrader',    current_streak:7,  longest_streak:11, total_score:3800, weekly_score:800  },
+  { username:'holotrader',   current_streak:5,  longest_streak:9,  total_score:3100, weekly_score:500  },
+  { username:'packopener99', current_streak:4,  longest_streak:8,  total_score:2600, weekly_score:400  },
+  { username:'shinyseeker',  current_streak:3,  longest_streak:7,  total_score:2100, weekly_score:300  },
+  { username:'altartking',   current_streak:2,  longest_streak:6,  total_score:1800, weekly_score:200  },
+  { username:'ribboncheck',  current_streak:1,  longest_streak:4,  total_score:1400, weekly_score:100  },
+];
+
+// ===== STATE =====
+let allEntries    = [];
+let currentPeriod = 'streak';
+let currentUser   = null;
+
+// ===== SORT HELPERS =====
+function sortEntries(entries, period) {
+  const copy = [...entries];
+  if (period === 'streak')  return copy.sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0));
+  if (period === 'alltime') return copy.sort((a, b) => (b.total_score    || 0) - (a.total_score    || 0));
+  if (period === 'weekly')  return copy.sort((a, b) => (b.weekly_score   || 0) - (a.weekly_score   || 0));
+  return copy;
+}
+
+function periodLabel(period) {
+  if (period === 'streak')  return 'Top Streaks';
+  if (period === 'alltime') return 'All-Time Score';
+  if (period === 'weekly')  return 'This Week';
+  return 'Leaderboard';
+}
+
+function periodValue(entry, period) {
+  if (period === 'streak')  return (entry.current_streak || 0) + ' day streak';
+  if (period === 'alltime') return (entry.total_score    || 0) + ' pts';
+  if (period === 'weekly')  return (entry.weekly_score   || 0) + ' pts';
+  return '';
+}
+
+function periodScore(entry, period) {
+  if (period === 'streak')  return entry.current_streak || 0;
+  if (period === 'alltime') return entry.total_score    || 0;
+  if (period === 'weekly')  return entry.weekly_score   || 0;
+  return 0;
+}
+
+const MEDALS = ['&#x1F947;', '&#x1F948;', '&#x1F949;'];
+const RANK_CLASSES = ['gold', 'silver', 'bronze'];
+const AVATARS = ['&#x1F525;', '&#x2728;', '&#x1F4AB;', '&#x1F3C6;', '&#x1F9E0;', '&#x1F30C;', '&#x1F44E;', '&#x1F3B4;'];
+
+// ===== RENDER LEADERBOARD =====
+function renderList(entries, period, highlightUsername) {
+  const sorted = sortEntries(entries, period);
+  document.getElementById('lbSectionLabel').textContent = periodLabel(period);
+
+  const list = document.getElementById('lbList');
+  list.innerHTML = sorted.map((entry, i) => {
+    const rank      = i + 1;
+    const isHighlight = highlightUsername && entry.username === highlightUsername;
+    const rankEl    = rank <= 3
+      ? `<div class="lb-medal">${MEDALS[rank - 1]}</div>`
+      : `<div class="lb-rank">${rank}</div>`;
+    const avatar = AVATARS[i % AVATARS.length];
+    const score  = periodScore(entry, period);
+    const label  = period === 'streak' ? '&#x1F525; ' + score : score + ' pts';
+
+    return `
+      <div class="lb-row${isHighlight ? ' highlighted' : ''}">
+        ${rankEl}
+        <div class="lb-avatar">${avatar}</div>
+        <div class="lb-info">
+          <div class="lb-name">@${entry.username}</div>
+          <div class="lb-sub">Best streak: ${entry.longest_streak || 0}</div>
+        </div>
+        <div class="lb-right">
+          <div class="lb-score">${label}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== POPULATE YOUR STANDING CARD =====
+function populateYourCard(entries, user, period) {
+  if (!user || !user.username) {
+    document.getElementById('guestPrompt').style.display = 'block';
+    return;
+  }
+
+  const sorted    = sortEntries(entries, period);
+  const userIdx   = sorted.findIndex(e => e.username === user.username);
+  const userEntry = sorted[userIdx];
+
+  if (!userEntry) {
+    // User has no leaderboard entry yet
+    document.getElementById('yourCard').style.display = 'block';
+    document.getElementById('ycRank').textContent    = '—';
+    document.getElementById('ycHandle').textContent  = '@' + user.username;
+    document.getElementById('ycMeta').textContent    = 'No entries yet — play today!';
+    document.getElementById('ycStreak').textContent  = 0;
+    document.getElementById('ycBest').textContent    = 0;
+    return;
+  }
+
+  const rank = userIdx + 1;
+  document.getElementById('yourCard').style.display   = 'block';
+  document.getElementById('ycRank').textContent       = rank;
+  document.getElementById('ycHandle').textContent     = '@' + user.username;
+  document.getElementById('ycMeta').textContent       = 'Rank #' + rank + ' of ' + sorted.length + ' players';
+  document.getElementById('ycStreak').textContent     = userEntry.current_streak  || 0;
+  document.getElementById('ycBest').textContent       = userEntry.longest_streak  || 0;
+}
+
+// ===== LOAD DATA =====
+async function loadLeaderboard() {
+  try {
+    const res = await fetch('/api/leaderboard');
+    if (!res.ok) throw new Error('API unavailable');
+    const data = await res.json();
+    allEntries = data.entries || data;
+    if (!Array.isArray(allEntries) || allEntries.length === 0) throw new Error('Empty');
+  } catch (e) {
+    allEntries = FALLBACK_ENTRIES;
+  }
+
+  renderList(allEntries, currentPeriod, currentUser && currentUser.username);
+  populateYourCard(allEntries, currentUser, currentPeriod);
+}
+
+// ===== AUTH + INIT =====
+(async function init() {
+  if (typeof VaultAuth !== 'undefined') {
+    currentUser = await VaultAuth.getUser();
+  }
+
+  await loadLeaderboard();
+})();
+
+// ===== PERIOD TOGGLE =====
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    renderList(allEntries, currentPeriod, currentUser && currentUser.username);
+    populateYourCard(allEntries, currentUser, currentPeriod);
+  });
+});
+</script>
+<script src="public/js/auth.js"></script>
+</body>
+</html>

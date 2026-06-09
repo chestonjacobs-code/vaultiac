@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daily Riddle — VAULTIAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0a10;--paper:#f3eee6;--muted:#7a7488;--muted2:#9a93a6;--line:rgba(255,255,255,.09);
+  --gold:#e8c27a;--gold2:#f5d99a;--surface:#141220;--surface2:#1a1728;--surface3:#211e30;
+  --holo1:#7ce8d6;--holo2:#a78bfa;--holo3:#f0a6c8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--ink);color:var(--paper);overflow-x:hidden;}
+body{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* NAV */
+.topnav{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 20px 0;
+}
+.brand{display:flex;align-items:center;gap:8px;font-family:"Fraunces",serif;font-weight:900;font-size:17px;letter-spacing:.04em;
+  background:linear-gradient(120deg,#fff,var(--gold),#ffe9b0);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.safe-icon svg{width:18px;height:18px;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.streak-pill{
+  display:flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;letter-spacing:.04em;
+  background:rgba(232,194,122,.1);border:1px solid rgba(232,194,122,.25);
+  color:var(--gold);padding:5px 11px;border-radius:999px;
+}
+#streakCount{font-family:"Fraunces",serif;font-size:14px;}
+
+/* PAGE HEADER */
+.page-head{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:28px 20px 0;
+  opacity:0;animation:rise .6s .1s ease forwards;
+}
+.eyebrow{font-size:10px;letter-spacing:.44em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;}
+.page-head h1{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,6vw,36px);line-height:1.05;letter-spacing:-.02em;}
+.page-head h1 em{font-style:normal;background:linear-gradient(90deg,var(--gold),var(--holo2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.page-head p{color:var(--muted2);font-size:13px;margin-top:8px;line-height:1.5;}
+
+/* PROGRESS */
+.progress-wrap{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:20px 20px 0;
+  opacity:0;animation:rise .6s .16s ease forwards;
+}
+.progress-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.progress-label{font-size:11px;color:var(--muted);letter-spacing:.08em;}
+.progress-score{font-size:11px;font-weight:700;color:var(--gold);}
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--holo2),var(--gold));border-radius:2px;transition:width .4s ease;}
+
+/* RIDDLE CARD */
+.riddle-wrap{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:16px 20px 0;
+  opacity:0;animation:rise .6s .22s ease forwards;
+}
+.riddle-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:24px;position:relative;overflow:hidden;
+}
+.riddle-card::before{
+  content:"";position:absolute;top:-40%;left:-20%;width:140%;height:80%;
+  background:conic-gradient(from 200deg,rgba(167,139,250,.08),rgba(124,232,214,.05),rgba(240,166,200,.06),rgba(167,139,250,.08));
+  filter:blur(40px);pointer-events:none;
+}
+.riddle-num{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px;}
+.riddle-q{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(18px,4vw,24px);line-height:1.3;margin-bottom:6px;position:relative;}
+.riddle-hint{font-size:12px;color:var(--muted2);line-height:1.5;margin-top:8px;position:relative;}
+
+/* ANSWER OPTIONS */
+.options-wrap{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:14px 20px 0;
+  opacity:0;animation:rise .6s .28s ease forwards;
+}
+.option-btn{
+  width:100%;font-family:inherit;font-size:14px;font-weight:600;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  color:var(--paper);cursor:pointer;padding:15px 18px;margin-bottom:10px;
+  display:flex;align-items:center;gap:12px;text-align:left;transition:.2s;
+  position:relative;overflow:hidden;
+}
+.option-btn::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .2s;}
+.option-btn:hover:not(.answered){border-color:rgba(232,194,122,.35);transform:translateX(3px);}
+.option-btn:hover:not(.answered)::before{opacity:1;background:rgba(232,194,122,.04);}
+.option-btn.correct{border-color:#7ce8d6;background:rgba(124,232,214,.08);color:#7ce8d6;pointer-events:none;}
+.option-btn.wrong{border-color:rgba(240,100,100,.4);background:rgba(240,100,100,.06);color:#f08080;pointer-events:none;}
+.option-btn.reveal{border-color:rgba(255,255,255,.14);opacity:.55;pointer-events:none;}
+.option-letter{
+  width:28px;height:28px;border-radius:8px;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;letter-spacing:.06em;flex:none;
+  transition:background .2s,color .2s;
+}
+.option-btn.correct .option-letter{background:rgba(124,232,214,.2);color:#7ce8d6;}
+.option-btn.wrong .option-letter{background:rgba(240,100,100,.2);color:#f08080;}
+
+/* RESULT PANEL */
+.result-panel{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:0 20px;margin-top:16px;
+  display:none;
+}
+.result-panel.show{display:block;animation:rise .5s ease forwards;}
+
+.result-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:24px;text-align:center;position:relative;overflow:hidden;
+}
+.result-card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(80% 60% at 50% 0%,rgba(232,194,122,.06),transparent 70%);
+}
+.result-icon{font-size:44px;margin-bottom:12px;display:block;}
+.result-title{font-family:"Fraunces",serif;font-weight:900;font-size:26px;letter-spacing:-.02em;margin-bottom:6px;}
+.result-sub{font-size:13px;color:var(--muted2);line-height:1.5;margin-bottom:20px;}
+.result-stats{display:flex;gap:12px;justify-content:center;margin-bottom:20px;}
+.stat-chip{
+  background:var(--surface2);border:1px solid var(--line);border-radius:12px;
+  padding:10px 16px;text-align:center;
+}
+.stat-chip .sv{font-family:"Fraunces",serif;font-weight:900;font-size:22px;color:var(--gold);}
+.stat-chip .sl{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+.result-actions{display:flex;flex-direction:column;gap:10px;margin-bottom:0;}
+.next-btn{
+  font-family:inherit;font-size:14px;font-weight:700;
+  background:linear-gradient(90deg,#c8a855,var(--gold),#e8d890);
+  color:#0c0a10;border:none;border-radius:12px;padding:14px;cursor:pointer;
+  transition:.2s;
+}
+.next-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,194,122,.3);}
+.save-cta{
+  font-family:inherit;font-size:13px;font-weight:700;
+  background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);
+  color:#c4b0fa;border-radius:12px;padding:13px;cursor:pointer;transition:.2s;
+}
+.save-cta:hover{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.4);}
+.skip-link{
+  font-family:inherit;font-size:12px;color:var(--muted);background:none;border:none;
+  cursor:pointer;padding:6px;text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:rgba(122,116,136,.3);transition:color .2s;
+}
+.skip-link:hover{color:var(--paper);}
+
+/* LEADERBOARD TEASER */
+.lb-teaser{
+  position:relative;z-index:2;width:100%;max-width:560px;
+  padding:24px 20px 0;
+  opacity:0;animation:rise .6s .34s ease forwards;
+}
+.lb-teaser-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.lb-teaser-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:18px;}
+.lb-link{font-size:12px;font-weight:600;color:var(--gold);text-decoration:none;letter-spacing:.04em;}
+.lb-row{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+}
+.lb-rank{width:26px;font-family:"Fraunces",serif;font-weight:900;font-size:15px;color:var(--muted);text-align:center;flex:none;}
+.lb-rank.top{color:var(--gold);}
+.lb-name{flex:1;font-weight:600;font-size:13px;}
+.lb-streak{font-size:11px;font-weight:700;color:var(--gold);background:rgba(232,194,122,.08);border:1px solid rgba(232,194,122,.18);padding:3px 9px;border-radius:999px;}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="brand">
+    <span class="safe-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="16" height="13" rx="2" stroke="#e8c27a" stroke-width="1.5"/>
+        <rect x="4.5" y="6.5" width="8" height="7" rx="1" stroke="#e8c27a" stroke-width="1" opacity="0.5"/>
+        <circle cx="8.5" cy="10" r="1.6" stroke="#e8c27a" stroke-width="1.2"/>
+        <path d="M7.5 8.5 Q7.5 6.8 8.5 6.8 Q9.5 6.8 9.5 8.5" stroke="#e8c27a" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="15" y1="9" x2="15" y2="11" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="4" cy="7.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <circle cx="4" cy="12.5" r="0.7" fill="#e8c27a" opacity="0.6"/>
+        <line x1="5" y1="17" x2="5" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="15" y1="17" x2="15" y2="18.5" stroke="#e8c27a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    VAULTIAC
+  </div>
+  <div class="nav-right">
+    <div class="streak-pill" id="streakPill">
+      <span>&#x1F525;</span><span id="streakCount">3</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-head">
+  <div class="eyebrow">Daily Challenge</div>
+  <h1>Today's <em>Riddle.</em></h1>
+  <p>Five questions. How many can you answer before the streak breaks?</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-meta">
+    <span class="progress-label" id="progressLabel">Question 1 of 5</span>
+    <span class="progress-score" id="progressScore">0 pts</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- RIDDLE CARD -->
+<div class="riddle-wrap">
+  <div class="riddle-card">
+    <div class="riddle-num" id="riddleNum">Riddle 01</div>
+    <div class="riddle-q" id="riddleQ">Loading question...</div>
+    <div class="riddle-hint" id="riddleHint"></div>
+  </div>
+</div>
+
+<!-- OPTIONS -->
+<div class="options-wrap" id="optionsWrap"></div>
+
+<!-- RESULT PANEL -->
+<div class="result-panel" id="resultPanel">
+  <div class="result-card">
+    <span class="result-icon" id="resultIcon">&#x1F525;</span>
+    <div class="result-title" id="resultTitle">Streak Extended!</div>
+    <div class="result-sub" id="resultSub">You answered all 5 correctly.</div>
+    <div class="result-stats">
+      <div class="stat-chip">
+        <div class="sv" id="resultScore">500</div>
+        <div class="sl">points</div>
+      </div>
+      <div class="stat-chip">
+        <div class="sv" id="resultStreak">4</div>
+        <div class="sl">day streak</div>
+      </div>
+    </div>
+    <div class="result-actions">
+      <button class="next-btn" id="nextBtn">Play again tomorrow &#x2192;</button>
+      <button class="save-cta" id="saveCta">&#x1F525; Save my streak &#x2014; Create free account</button>
+      <button class="skip-link" id="skipLink">No thanks, just browsing</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD TEASER -->
+<div class="lb-teaser">
+  <div class="lb-teaser-head">
+    <h2>Today's Top Players</h2>
+    <a class="lb-link" href="vaultiac-leaderboard.html">Full board &#x2192;</a>
+  </div>
+  <div id="lbTeaser"></div>
+</div>
+
+<script>
+// ===== RIDDLE DATA =====
+const RIDDLES = [
+  {
+    q: 'Which Charizard card was the first to be printed as a "holo rare" in the English TCG?',
+    hint: 'Think 1999 — the very first English set.',
+    options: ['Base Set Charizard 4/102', 'Fossil Moltres', 'Jungle Scyther', 'Base Set 2 Charizard'],
+    answer: 0,
+    pts: 100,
+  },
+  {
+    q: 'What does the star symbol (&#x2605;) after a card number indicate in modern Scarlet & Violet sets?',
+    hint: 'It appears on Secret Rare cards printed beyond the official set size.',
+    options: ['Shiny Pokemon', 'Reverse Holo', 'Secret Rare beyond set total', 'First Edition'],
+    answer: 2,
+    pts: 100,
+  },
+  {
+    q: 'Umbreon VMAX (Alternate Art) from Evolving Skies is widely considered one of the most valuable modern cards. What set number is it?',
+    hint: 'It is numbered beyond the standard set size of 203.',
+    options: ['189/203', '215/203', '203/203', '234/203'],
+    answer: 1,
+    pts: 100,
+  },
+  {
+    q: 'What grading scale does PSA use, and what is the highest grade a card can receive?',
+    hint: 'PSA grades are whole numbers.',
+    options: ['1-10, highest is 10', '0-100, highest is 100', '1-5, highest is 5', 'F through A+'],
+    answer: 0,
+    pts: 100,
+  },
+  {
+    q: 'The "Pikachu Illustrator" card is considered the rarest Pokemon card ever. How was it originally distributed?',
+    hint: 'It was a prize for a creative contest in Japan.',
+    options: ['Tournament prize', 'CoroCoro magazine', 'Illustration contest winners', 'Prerelease event'],
+    answer: 2,
+    pts: 100,
+  },
+];
+
+// ===== STATE =====
+let currentIdx   = 0;
+let score        = 0;
+let correctCount = 0;
+let answered     = false;
+let currentUsername = 'Player';
+
+// ===== INIT: RESOLVE USERNAME + STREAK =====
+(async function initAuth() {
+  // Load auth.js module is already on page — VaultAuth is available
+  if (typeof VaultAuth === 'undefined') return;
+
+  const user = await VaultAuth.getUser();
+  currentUsername = user && user.username ? user.username : 'Player';
+
+  // Update streak pill from real data if logged in
+  if (currentUsername !== 'Player') {
+    try {
+      const token = VaultAuth.getToken();
+      const res = await fetch('/api/leaderboard/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.current_streak === 'number') {
+          document.getElementById('streakCount').textContent = data.current_streak;
+        }
+      }
+    } catch (e) { /* keep default */ }
+
+    // Hide save-cta and skip-link for logged-in users
+    const saveCta  = document.getElementById('saveCta');
+    const skipLink = document.getElementById('skipLink');
+    if (saveCta)  saveCta.style.display  = 'none';
+    if (skipLink) skipLink.style.display = 'none';
+  }
+})();
+
+// ===== LOAD LEADERBOARD TEASER =====
+(async function loadTeaser() {
+  try {
+    const res = await fetch('/api/leaderboard?limit=3');
+    if (!res.ok) return;
+    const data = await res.json();
+    const rows = data.entries || data;
+    if (!Array.isArray(rows)) return;
+    const container = document.getElementById('lbTeaser');
+    container.innerHTML = rows.slice(0, 3).map((entry, i) => `
+      <div class="lb-row">
+        <div class="lb-rank ${i < 3 ? 'top' : ''}">${i + 1}</div>
+        <div class="lb-name">@${entry.username}</div>
+        <div class="lb-streak">&#x1F525; ${entry.current_streak || 0}</div>
+      </div>
+    `).join('');
+  } catch (e) { renderFallbackTeaser(); }
+})();
+
+function renderFallbackTeaser() {
+  const fallback = [
+    { username: 'vaultking', current_streak: 14 },
+    { username: 'charizardfan', current_streak: 9 },
+    { username: 'psagrader', current_streak: 7 },
+  ];
+  const container = document.getElementById('lbTeaser');
+  container.innerHTML = fallback.map((entry, i) => `
+    <div class="lb-row">
+      <div class="lb-rank top">${i + 1}</div>
+      <div class="lb-name">@${entry.username}</div>
+      <div class="lb-streak">&#x1F525; ${entry.current_streak}</div>
+    </div>
+  `).join('');
+}
+
+// ===== RENDER QUESTION =====
+function renderQuestion() {
+  const q = RIDDLES[currentIdx];
+  document.getElementById('riddleNum').textContent = 'Riddle ' + String(currentIdx + 1).padStart(2, '0');
+  document.getElementById('riddleQ').innerHTML = q.q;
+  document.getElementById('riddleHint').textContent = q.hint;
+  document.getElementById('progressLabel').textContent = 'Question ' + (currentIdx + 1) + ' of ' + RIDDLES.length;
+  document.getElementById('progressFill').style.width = (currentIdx / RIDDLES.length * 100) + '%';
+  answered = false;
+
+  const letters = ['A', 'B', 'C', 'D'];
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = q.options.map((opt, i) => `
+    <button class="option-btn" data-idx="${i}">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+
+  wrap.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleAnswer(parseInt(btn.dataset.idx)));
+  });
+}
+
+// ===== HANDLE ANSWER =====
+function handleAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const q = RIDDLES[currentIdx];
+  const buttons = document.querySelectorAll('.option-btn');
+
+  buttons.forEach((btn, i) => {
+    if (i === q.answer)   btn.classList.add('correct');
+    else if (i === idx)   btn.classList.add('wrong');
+    else                  btn.classList.add('reveal');
+    btn.classList.add('answered');
+  });
+
+  if (idx === q.answer) {
+    score += q.pts;
+    correctCount++;
+  }
+
+  document.getElementById('progressScore').textContent = score + ' pts';
+
+  setTimeout(() => {
+    currentIdx++;
+    if (currentIdx < RIDDLES.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }, 1200);
+}
+
+// ===== SHOW RESULT =====
+async function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = 'Complete!';
+  document.getElementById('optionsWrap').style.display = 'none';
+  document.querySelector('.riddle-wrap').style.display = 'none';
+
+  const allCorrect = correctCount === RIDDLES.length;
+  document.getElementById('resultIcon').textContent    = allCorrect ? '🔥' : (correctCount >= 3 ? '✨' : '📚');
+  document.getElementById('resultTitle').textContent   = allCorrect ? 'Perfect Score!' : (correctCount >= 3 ? 'Nice Run!' : 'Keep Practicing');
+  document.getElementById('resultSub').textContent     = correctCount + ' of ' + RIDDLES.length + ' correct — ' + score + ' points earned.';
+  document.getElementById('resultScore').textContent   = score;
+
+  document.getElementById('resultPanel').classList.add('show');
+
+  // Submit score to backend using real username
+  try {
+    const payload = {
+      username: currentUsername,
+      score:    score,
+      correct:  correctCount,
+      total:    RIDDLES.length,
+    };
+    const headers = { 'Content-Type': 'application/json' };
+    if (typeof VaultAuth !== 'undefined' && VaultAuth.getToken()) {
+      headers['Authorization'] = 'Bearer ' + VaultAuth.getToken();
+    }
+    const res = await fetch('/api/trivia/complete', {
+      method:  'POST',
+      headers: headers,
+      body:    JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.current_streak === 'number') {
+        document.getElementById('resultStreak').textContent = data.current_streak;
+        document.getElementById('streakCount').textContent  = data.current_streak;
+      }
+    }
+  } catch (e) {
+    // API not available in mockup — show estimated streak
+    document.getElementById('resultStreak').textContent = allCorrect ? 4 : 0;
+  }
+
+  // Re-check logged-in state for save-cta visibility
+  if (typeof VaultAuth !== 'undefined' && VaultAuth.isLoggedIn()) {
+    const saveCta  = document.getElementById('saveCta');
+    const skipLink = document.getElementById('skipLink');
+    if (saveCta)  saveCta.style.display  = 'none';
+    if (skipLink) skipLink.style.display = 'none';
+  }
+}
+
+// ===== NAVIGATION =====
+document.getElementById('nextBtn').addEventListener('click', () => {
+  window.location.href = 'vaultiac-home.html';
+});
+document.getElementById('saveCta').addEventListener('click', () => {
+  window.location.href = 'vaultiac-home.html#signup';
+});
+document.getElementById('skipLink').addEventListener('click', () => {
+  window.location.href = 'vaultiac-home.html';
+});
+
+// ===== START =====
+renderQuestion();
+renderFallbackTeaser();
+</script>
+<script src="public/js/auth.js"></script>
+</body>
+</html>

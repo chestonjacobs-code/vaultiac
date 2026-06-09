@@ -261,7 +261,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 
 <!-- COUNTDOWN -->
 <div class="countdown-row">
-  ⏱ Next Pokémon in <strong id="countdown">—</strong>
+  ⏱ Resets at midnight · <strong id="countdown">—</strong>
 </div>
 
 <script>
@@ -273,15 +273,12 @@ let gameOver = false;
 let username = localStorage.getItem('vaultiac_username') || 'Player';
 
 function getCurrentPeriod() {
+  // Reset at midnight — period key is today's calendar date
   const now = new Date();
-  const hour = now.getHours();
-  const base = hour < 8
-    ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-    : new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yyyy = base.getFullYear();
-  const mm = String(base.getMonth() + 1).padStart(2, '0');
-  const dd = String(base.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}-period2`;
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 // ===== LOAD DAILY TRIVIA =====
@@ -304,7 +301,7 @@ async function loadDailyTrivia() {
       <div style="font-size:32px;margin-bottom:16px;">✅</div>
       <div style="font-family:Fraunces,serif;font-weight:700;font-size:20px;margin-bottom:8px;">You've played today!</div>
       ${lastPokemon ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Today's Pokémon was <strong style="color:var(--paper);">${lastPokemon.charAt(0).toUpperCase() + lastPokemon.slice(1)}</strong></div>` : ''}
-      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back tomorrow at 12AM for a new Pokémon.</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Come back at midnight for a new Pokémon.</div>
     `;
     if (container) container.appendChild(lockEl);
     if (inputZone) inputZone.style.display = 'none';

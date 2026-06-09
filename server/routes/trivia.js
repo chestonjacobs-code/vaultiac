@@ -15,26 +15,17 @@ function getYesterday() {
   return d.toISOString().split('T')[0];
 }
 
-// Daily period: resets at 8AM each day
 function getCurrentPeriod() {
-  const now = new Date();
-  const hour = now.getHours();
-  const dateStr = now.toISOString().split('T')[0];
-  if (hour < 8) {
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0] + '-period2';
-  }
-  return dateStr + '-period2';
+  // Reset at midnight — period key is simply today's calendar date
+  return new Date().toISOString().split('T')[0];
 }
 
 function getNextReset() {
+  // Next reset is always next midnight
   const now = new Date();
   const next = new Date(now);
-  if (now.getHours() >= 8) {
-    next.setDate(next.getDate() + 1);
-  }
-  next.setHours(8, 0, 0, 0);
+  next.setDate(next.getDate() + 1);
+  next.setHours(0, 0, 0, 0);
   return next.toISOString();
 }
 

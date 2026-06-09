@@ -15,6 +15,8 @@ app.use(express.static(path.join(__dirname, '../')));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // API routes
+const { router: authRouter } = require('./routes/auth');
+app.use('/api/auth', authRouter);
 app.use('/api/cards', require('./routes/cards'));
 app.use('/api/trivia', require('./routes/trivia'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));

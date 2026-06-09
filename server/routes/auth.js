@@ -42,7 +42,8 @@ router.get('/check-username', async (req, res) => {
     if (rows.length > 0) return res.json({ available: false, reason: 'Username already taken.' });
     return res.json({ available: true });
   } catch(e) {
-    return res.status(500).json({ error: 'Server error' });
+    console.error('[auth] check-username error:', e.message, e.stack);
+    return res.status(500).json({ error: 'Server error', detail: e.message });
   }
 });
 
@@ -91,8 +92,8 @@ router.post('/signup', async (req, res) => {
     return res.json({ token, user: { id: user.id, email: user.email, username: user.username } });
 
   } catch(e) {
-    console.error('[auth] signup error:', e.message);
-    return res.status(500).json({ error: 'Server error during signup' });
+    console.error('[auth] signup error:', e.message, e.stack);
+    return res.status(500).json({ error: 'Server error during signup', detail: e.message });
   }
 });
 
@@ -113,8 +114,8 @@ router.post('/login', async (req, res) => {
     return res.json({ token, user: { id: user.id, email: user.email, username: user.username } });
 
   } catch(e) {
-    console.error('[auth] login error:', e.message);
-    return res.status(500).json({ error: 'Server error during login' });
+    console.error('[auth] login error:', e.message, e.stack);
+    return res.status(500).json({ error: 'Server error during login', detail: e.message });
   }
 });
 

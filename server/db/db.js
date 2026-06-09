@@ -68,6 +68,18 @@ async function initSchema() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+    // Auth users table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        username TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

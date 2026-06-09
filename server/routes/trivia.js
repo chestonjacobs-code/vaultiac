@@ -5,6 +5,41 @@ const router = express.Router();
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2';
 
+// ---- POKEMON NAME LIST — loaded once at startup for fuzzy validation ----
+let _pokemonNames = null;
+
+async function getPokemonNames() {
+  if (_pokemonNames) return _pokemonNames;
+  try {
+    const res = await axios.get(`${POKEAPI_BASE}/pokemon?limit=1025`);
+    _pokemonNames = res.data.results.map(p => p.name.toLowerCase());
+    console.log(`[trivia] Loaded ${_pokemonNames.length} Pokémon names for validation`);
+  } catch(e) {
+    console.warn('[trivia] Failed to load Pokémon name list:', e.message);
+    _pokemonNames = [];
+  }
+  return _pokemonNames;
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_,i) => Array.from({length: n+1}, (_,j) => j===0?i:0));
+  for(let j=1;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++)
+    for(let j=1;j<=n;j++)
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+function findClosestPokemon(guess, names) {
+  let best = null, bestDist = Infinity;
+  for (const name of names) {
+    const d = levenshtein(guess, name);
+    if (d < bestDist) { bestDist = d; best = name; }
+  }
+  return { name: best, distance: bestDist };
+}
+
 function getEasternDateString(date) {
   // Always return YYYY-MM-DD in America/New_York time
   return date.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -62,10 +97,27 @@ function buildClues(pokemon, speciesData, stage, flavorText) {
   const color = speciesData.color ? speciesData.color.name.charAt(0).toUpperCase() + speciesData.color.name.slice(1) : 'unknown';
   const clue3 = `This Pokémon is primarily ${color} in color.`;
 
-  // Clue 4 — Evolution stage
+  // Clue 4 — Evolution stage (plain English position in line)
   const stageNum = stage || 1;
-  const stageLabel = stageNum === 1 ? 'a Basic' : stageNum === 2 ? 'a Stage 1' : 'a Stage 2';
-  const clue4 = `This is ${stageLabel} Pokémon.`;
+  const hasEvolutions = speciesData.evolves_from_species || (speciesData.evolution_chain);
+  const chainLength = stage; // stage is position in chain (1 = base, 2 = middle, 3 = final)
+
+  // Determine if this Pokémon has any evolutions at all
+  // We check evolves_to on the chain — passed in via stage logic above
+  // Use stageNum and total chain info to build plain language
+  let clue4;
+  if (stageNum === 1) {
+    if (!speciesData.evolves_from_species) {
+      // Could be base with evolutions, or standalone — we'll say base
+      clue4 = `This Pokémon is a base Pokémon — it has not yet evolved.`;
+    } else {
+      clue4 = `This Pokémon is a base Pokémon — it has not yet evolved.`;
+    }
+  } else if (stageNum === 2) {
+    clue4 = `This Pokémon is the second in its evolutionary line.`;
+  } else {
+    clue4 = `This Pokémon is the final evolution in its line.`;
+  }
 
   // Clue 5 — Flavor text (Pokédex entry)
   const clue5 = flavorText
@@ -251,5 +303,44 @@ router.post('/submit', async (req, res) => {
     res.status(500).json({ error: 'Failed to submit trivia' });
   }
 });
+
+// POST /api/trivia/validate — fuzzy guess validation
+// Returns: { status, suggestion, display_name }
+// status: 'correct' | 'wrong' | 'close_to_answer' | 'close_to_other' | 'unknown'
+router.post('/validate', async (req, res) => {
+  const { guess, pokemon_name } = req.body;
+  if (!guess || !pokemon_name) return res.status(400).json({ error: 'guess and pokemon_name required' });
+
+  const g = guess.trim().toLowerCase();
+  const answer = pokemon_name.toLowerCase();
+
+  // Exact correct answer
+  if (g === answer) return res.json({ status: 'correct' });
+
+  const names = await getPokemonNames();
+
+  // Check if guess is an exact known Pokémon name (correctly spelled, just wrong)
+  if (names.includes(g)) return res.json({ status: 'wrong', display_name: g.charAt(0).toUpperCase() + g.slice(1) });
+
+  // Fuzzy check against the correct answer first
+  const distToAnswer = levenshtein(g, answer);
+  if (distToAnswer <= 2) {
+    const display = answer.charAt(0).toUpperCase() + answer.slice(1);
+    return res.json({ status: 'close_to_answer', suggestion: display, distance: distToAnswer });
+  }
+
+  // Fuzzy check against all known Pokémon names
+  const closest = findClosestPokemon(g, names);
+  if (closest.distance <= 2) {
+    const display = closest.name.charAt(0).toUpperCase() + closest.name.slice(1);
+    return res.json({ status: 'close_to_other', suggestion: display, distance: closest.distance });
+  }
+
+  // Not close to anything
+  return res.json({ status: 'unknown' });
+});
+
+// Preload Pokémon name list at startup (non-blocking)
+getPokemonNames();
 
 module.exports = router;

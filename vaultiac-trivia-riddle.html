@@ -399,56 +399,129 @@ function levenshtein(a, b) {
   return dp[m][n];
 }
 
-function checkGuess(val) {
+let _pendingSuggestion = null; // tracks a pending "did you mean" state
+
+async function checkGuess(val) {
   if (gameOver || !PUZZLE) return;
   const guess = val.trim().toLowerCase();
   if (!guess) return;
 
-  if (guess === PUZZLE.pokemonName.toLowerCase()) {
-    const pts = 7 - currentClue;
-    gameOver = true;
-    const input = document.getElementById('guessInput');
-    input.value = PUZZLE.displayName;
-    input.classList.add('correct-flash');
-    document.getElementById('inputZone').style.pointerEvents = 'none';
-    showFeedback('Correct!', 'correct');
+  // If user is confirming a "did you mean" suggestion
+  if (_pendingSuggestion) {
+    const confirmed = guess === _pendingSuggestion.toLowerCase() || guess === 'yes';
+    if (confirmed) {
+      const isAnswer = _pendingSuggestion.toLowerCase() === PUZZLE.pokemonName.toLowerCase();
+      _pendingSuggestion = null;
+      if (isAnswer) {
+        handleCorrectGuess(guess);
+      } else {
+        // close_to_other confirmed — counts as wrong
+        handleWrongAnswer(guess);
+      }
+      document.getElementById('guessInput').value = '';
+      return;
+    } else {
+      // They typed something new — clear pending and re-evaluate
+      _pendingSuggestion = null;
+    }
+  }
 
+  // Disable input during async validation
+  document.getElementById('submitBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/trivia/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guess, pokemon_name: PUZZLE.pokemonName })
+    });
+    const data = await res.json();
+
+    switch(data.status) {
+      case 'correct':
+        handleCorrectGuess(guess);
+        break;
+
+      case 'wrong':
+        // Correctly spelled, wrong Pokémon — burns a clue
+        handleWrongAnswer(guess);
+        break;
+
+      case 'close_to_answer':
+        // Close to correct answer — suggest, don't burn clue
+        _pendingSuggestion = data.suggestion;
+        showFeedback(`Did you mean ${data.suggestion}? Type their name to confirm.`, 'typo');
+        shakeInput();
+        break;
+
+      case 'close_to_other':
+        // Close to a different Pokémon — suggest, wait for confirmation, then burn clue if confirmed
+        _pendingSuggestion = data.suggestion;
+        showFeedback(`Did you mean ${data.suggestion}? Type their name to confirm.`, 'typo');
+        shakeInput();
+        break;
+
+      case 'unknown':
+      default:
+        // Not close to anything — spelling error, don't burn clue
+        showFeedback(`We don't recognize that — check the spelling.`, 'typo');
+        shakeInput();
+        break;
+    }
+  } catch(e) {
+    // Fallback to local check if API fails
+    if (guess === PUZZLE.pokemonName.toLowerCase()) {
+      handleCorrectGuess(guess);
+    } else {
+      showFeedback('Not quite — try again.', 'wrong');
+      shakeInput();
+    }
+  }
+
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('guessInput').value = '';
+}
+
+function handleCorrectGuess(guess) {
+  const pts = 7 - currentClue;
+  gameOver = true;
+  const input = document.getElementById('guessInput');
+  input.value = PUZZLE.displayName;
+  input.classList.add('correct-flash');
+  document.getElementById('inputZone').style.pointerEvents = 'none';
+  showFeedback('Correct!', 'correct');
+  localStorage.setItem('vaultiac_trivia_period', getCurrentPeriod());
+  localStorage.setItem('vaultiac_trivia_last', PUZZLE.pokemonName);
+  API.submitTrivia({
+    username: username,
+    pokemon_name: PUZZLE.pokemonName,
+    guess: guess,
+    clues_used: currentClue
+  }).then(result => {
+    console.log('Score submitted:', result);
+  }).catch(err => console.warn('Score submit failed:', err));
+  setTimeout(() => showResult(true, pts), 400);
+}
+
+function handleWrongAnswer(guess) {
+  shakeInput();
+  if (currentClue < 6) {
+    showFeedback('Wrong — next clue revealed.', 'wrong');
+    currentClue++;
+    renderClue(currentClue - 1);
+  } else {
+    gameOver = true;
+    document.getElementById('inputZone').style.pointerEvents = 'none';
     localStorage.setItem('vaultiac_trivia_period', getCurrentPeriod());
     localStorage.setItem('vaultiac_trivia_last', PUZZLE.pokemonName);
     API.submitTrivia({
       username: username,
       pokemon_name: PUZZLE.pokemonName,
       guess: guess,
-      clues_used: currentClue
-    }).then(result => {
-      console.log('Score submitted:', result);
+      clues_used: 6
     }).catch(err => console.warn('Score submit failed:', err));
-
-    setTimeout(() => showResult(true, pts), 400);
-  } else {
-    showFeedback('Not quite — try again', 'wrong');
-    shakeInput();
-
-    if (currentClue < 6) {
-      currentClue++;
-      renderClue(currentClue - 1);
-    } else {
-      gameOver = true;
-      document.getElementById('inputZone').style.pointerEvents = 'none';
-
-      localStorage.setItem('vaultiac_trivia_period', getCurrentPeriod());
-      localStorage.setItem('vaultiac_trivia_last', PUZZLE.pokemonName);
-      API.submitTrivia({
-        username: username,
-        pokemon_name: PUZZLE.pokemonName,
-        guess: guess,
-        clues_used: 6
-      }).catch(err => console.warn('Score submit failed:', err));
-
-      setTimeout(() => endGame(false), 400);
-    }
+    setTimeout(() => endGame(false), 400);
   }
-  document.getElementById('guessInput').value = '';
 }
 
 function handleWrongGuess() {

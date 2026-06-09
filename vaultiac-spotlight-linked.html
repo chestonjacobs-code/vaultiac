@@ -47,7 +47,7 @@ body{display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
 .story-frame{
   position:relative;
   height:min(calc(100svh - 32px), calc((100vw - 32px) * 16/9));
-  width:min(calc(100vw - 32px), calc((100svh - 32px) * 9/16));
+  width:min(calc(100vw - 32px), calc((100svh - 32px) * 9/16), 420px);
   border-radius:28px;overflow:hidden;
   background:radial-gradient(130% 50% at 50% 110%,rgba(232,194,122,.28),transparent 58%),linear-gradient(170deg,#16121e 0%,#0d0b12 55%,#120d1a 100%);
   border:1px solid var(--line);
@@ -107,7 +107,7 @@ body{display:flex;flex-direction:column;align-items:center;padding:0 0 80px;}
 
 /* --- card zone --- */
 .sf-card-zone{perspective:1100px;flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0;position:relative;}
-.card{height:min(62vh,380px);width:auto;aspect-ratio:63/88;border-radius:13px;position:relative;z-index:1;
+.card{height:min(58vh,340px);width:auto;aspect-ratio:63/88;border-radius:13px;position:relative;z-index:1;
   background:linear-gradient(135deg,#f6d77a,#caa24d 40%,#f3e3a1 55%,#b8902f);
   padding:clamp(5px,.8vh,9px);transform:rotateZ(-3deg) rotateY(8deg);transition:transform .5s ease;
   box-shadow:0 28px 55px -12px rgba(0,0,0,.9);display:flex;flex-direction:column;}

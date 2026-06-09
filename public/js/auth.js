@@ -166,19 +166,30 @@ const VaultAuth = (() => {
     .va-logout-btn:hover { color: #f09090; border-color: rgba(240,100,100,.3); }
 
     .va-checkbox-row {
-      display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+      display: flex !important; align-items: flex-start !important;
+      gap: 10px !important; cursor: pointer !important;
+      padding: 4px 0 !important; margin: 0 !important;
     }
     .va-checkbox-row input[type="checkbox"] {
-      width: 16px; height: 16px; min-width: 16px; margin-top: 2px;
-      accent-color: #a78bfa; cursor: pointer;
+      display: inline-block !important;
+      width: 16px !important; height: 16px !important;
+      min-width: 16px !important; min-height: 16px !important;
+      margin: 2px 0 0 0 !important; padding: 0 !important;
+      flex-shrink: 0 !important;
+      accent-color: #a78bfa !important; cursor: pointer !important;
+      appearance: checkbox !important; -webkit-appearance: checkbox !important;
     }
     .va-checkbox-label {
-      font-size: 12px; color: #7a7488; line-height: 1.5; cursor: pointer;
+      display: block !important;
+      font-size: 12px !important; color: #7a7488 !important;
+      line-height: 1.5 !important; cursor: pointer !important;
+      margin: 0 !important; padding: 0 !important;
     }
     .va-checkbox-label a {
-      color: #a78bfa; text-decoration: underline; text-underline-offset: 2px;
+      color: #a78bfa !important; text-decoration: underline !important;
+      text-underline-offset: 2px !important;
     }
-    .va-checkbox-label a:hover { color: #f0a6c8; }
+    .va-checkbox-label a:hover { color: #f0a6c8 !important; }
   `;
   document.head.appendChild(style);
 

@@ -75,10 +75,17 @@ async function initSchema() {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         username TEXT UNIQUE NOT NULL,
+        notify_updates BOOLEAN DEFAULT FALSE,
+        agreed_to_terms BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+    `);
+    // Live migrations for existing users tables
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS notify_updates BOOLEAN DEFAULT FALSE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS agreed_to_terms BOOLEAN DEFAULT FALSE;
     `);
     console.log('Database schema initialized');
   } finally {

@@ -73,11 +73,18 @@ router.post('/signup', async (req, res) => {
       return res.status(409).json({ error: 'That username is already taken.' });
     }
 
+    const notify_updates = req.body.notify_updates === true;
+    const agreed_to_terms = req.body.agreed_to_terms === true;
+
+    if (!agreed_to_terms) {
+      return res.status(400).json({ error: 'You must agree to the Terms of Service to create an account.' });
+    }
+
     const password_hash = await bcrypt.hash(password, 12);
 
     const { rows } = await pool.query(
-      'INSERT INTO users (email, password_hash, username) VALUES ($1, $2, $3) RETURNING id, email, username, created_at',
-      [cleanEmail, password_hash, cleanUsername]
+      'INSERT INTO users (email, password_hash, username, notify_updates, agreed_to_terms) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, username, notify_updates, created_at',
+      [cleanEmail, password_hash, cleanUsername, notify_updates, agreed_to_terms]
     );
     const user = rows[0];
 
@@ -89,7 +96,7 @@ router.post('/signup', async (req, res) => {
     );
 
     const token = generateToken(user);
-    return res.json({ token, user: { id: user.id, email: user.email, username: user.username } });
+    return res.json({ token, user: { id: user.id, email: user.email, username: user.username, notify_updates: user.notify_updates } });
 
   } catch(e) {
     console.error('[auth] signup error:', e.message, e.stack);

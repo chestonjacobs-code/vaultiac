@@ -891,8 +891,8 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
   <div class="footer-links">
     <a class="footer-link" href="#features">Features</a>
     <a class="footer-link" href="vaultiac-card-picker.html">Card Spotlight</a>
-    <a class="footer-link" href="#">Privacy</a>
-    <a class="footer-link" href="#">Terms</a>
+    <a class="footer-link" href="vaultiac-privacy.html">Privacy</a>
+    <a class="footer-link" href="vaultiac-terms.html">Terms</a>
     <a class="footer-link" href="vaultiac-contact.html">Contact</a>
   </div>
   <div class="footer-copy">© 2026 VAULTIAC · All rights reserved</div>
@@ -1459,15 +1459,38 @@ const ro=new IntersectionObserver(entries=>{
 reveals.forEach(r=>ro.observe(r));
 
 // ===== NOTIFY =====
-document.getElementById('notifyBtn').addEventListener('click',()=>{
-  const email=document.getElementById('notifyEmail').value;
-  if(!email||!email.includes('@')) return;
-  const btn=document.getElementById('notifyBtn');
-  btn.textContent="✓ You're in!";
-  btn.style.background='linear-gradient(90deg,#2a6a30,#4a9840)';
-  document.getElementById('notifyEmail').value='';
-  setTimeout(()=>{ btn.textContent='Notify Me'; btn.style.background=''; },3000);
-});
+(function initNotifySection(){
+  const wrap = document.querySelector('.notify-wrap');
+  if (!wrap) return;
+
+  function checkNotifyState() {
+    if (typeof VaultAuth === 'undefined') return;
+    if (VaultAuth.isLoggedIn()) {
+      const user = VaultAuth.getUser();
+      if (user && user.notify_updates) {
+        wrap.innerHTML = `
+          <div style="font-size:32px;margin-bottom:12px;">✅</div>
+          <div class="notify-title">You're on the list.</div>
+          <p class="notify-sub">We'll let you know when new features drop. No spam — ever.</p>
+        `;
+        return;
+      }
+    }
+    // Not logged in or not opted in — show normal form
+    document.getElementById('notifyBtn').addEventListener('click', () => {
+      const email = document.getElementById('notifyEmail').value;
+      if (!email || !email.includes('@')) return;
+      const btn = document.getElementById('notifyBtn');
+      btn.textContent = "✓ You're in!";
+      btn.style.background = 'linear-gradient(90deg,#2a6a30,#4a9840)';
+      document.getElementById('notifyEmail').value = '';
+      setTimeout(() => { btn.textContent = 'Notify Me'; btn.style.background = ''; }, 3000);
+    });
+  }
+
+  // Wait for auth.js to load then check
+  window.addEventListener('load', checkNotifyState);
+})();
 
 // ===== MARKET PULSE =====
 document.getElementById('mpDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();

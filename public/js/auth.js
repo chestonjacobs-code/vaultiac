@@ -19,11 +19,11 @@ const VaultAuth = (() => {
     localStorage.removeItem(USER_KEY);
   }
 
-  async function signup(email, password, username) {
+  async function signup(email, password, username, notify_updates, agreed_to_terms) {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username })
+      body: JSON.stringify({ email, password, username, notify_updates, agreed_to_terms })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
@@ -164,6 +164,21 @@ const VaultAuth = (() => {
       padding: 10px 24px; cursor: pointer; transition: .2s;
     }
     .va-logout-btn:hover { color: #f09090; border-color: rgba(240,100,100,.3); }
+
+    .va-checkbox-row {
+      display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    }
+    .va-checkbox-row input[type="checkbox"] {
+      width: 16px; height: 16px; min-width: 16px; margin-top: 2px;
+      accent-color: #a78bfa; cursor: pointer;
+    }
+    .va-checkbox-label {
+      font-size: 12px; color: #7a7488; line-height: 1.5; cursor: pointer;
+    }
+    .va-checkbox-label a {
+      color: #a78bfa; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .va-checkbox-label a:hover { color: #f0a6c8; }
   `;
   document.head.appendChild(style);
 
@@ -259,6 +274,14 @@ const VaultAuth = (() => {
           <span class="va-username-status" id="vaUsernameStatus"></span>
         </div>
         <input class="va-input" id="vaSignupPassword" type="password" placeholder="Password (min 6 characters)" autocomplete="new-password"/>
+        <label class="va-checkbox-row">
+          <input type="checkbox" id="vaAgreeTerms"/>
+          <span class="va-checkbox-label">I agree to the <a href="/vaultiac-terms.html" target="_blank">Terms of Service</a> and <a href="/vaultiac-privacy.html" target="_blank">Privacy Policy</a>. <span style="color:#f09090;">*</span></span>
+        </label>
+        <label class="va-checkbox-row">
+          <input type="checkbox" id="vaNotifyUpdates"/>
+          <span class="va-checkbox-label">Notify me when new features drop — occasional updates only, no spam.</span>
+        </label>
         <div class="va-error" id="vaSignupError"></div>
         <button class="va-submit" id="vaSignupSubmit">Create Account</button>
         <div class="va-switch">Already have an account? <button id="vaSwitchLogin">Log in</button></div>
@@ -293,14 +316,17 @@ const VaultAuth = (() => {
       const email = document.getElementById('vaSignupEmail').value.trim();
       const username = document.getElementById('vaSignupUsername').value.trim();
       const password = document.getElementById('vaSignupPassword').value;
+      const agreedToTerms = document.getElementById('vaAgreeTerms').checked;
+      const notifyUpdates = document.getElementById('vaNotifyUpdates').checked;
       const errorEl = document.getElementById('vaSignupError');
       const submitBtn = document.getElementById('vaSignupSubmit');
       errorEl.textContent = '';
       if (!email || !password || !username) { errorEl.textContent = 'All fields are required.'; return; }
       if (!usernameAvailable) { errorEl.textContent = 'Please choose an available username.'; return; }
+      if (!agreedToTerms) { errorEl.textContent = 'You must agree to the Terms of Service to continue.'; return; }
       submitBtn.disabled = true; submitBtn.textContent = 'Creating account…';
       try {
-        await VaultAuth.signup(email, password, username);
+        await VaultAuth.signup(email, password, username, notifyUpdates, agreedToTerms);
         closeModal();
         updateButton();
       } catch(e) {

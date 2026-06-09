@@ -5,28 +5,39 @@ const router = express.Router();
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2';
 
+function getEasternDateString(date) {
+  // Always return YYYY-MM-DD in America/New_York time
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
 function getToday() {
-  return new Date().toISOString().split('T')[0];
+  return getEasternDateString(new Date());
 }
 
 function getYesterday() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  return getEasternDateString(d);
 }
 
 function getCurrentPeriod() {
-  // Reset at midnight — period key is simply today's calendar date
-  return new Date().toISOString().split('T')[0];
+  // Reset at midnight Eastern Time
+  return getEasternDateString(new Date());
 }
 
 function getNextReset() {
-  // Next reset is always next midnight
+  // Next midnight Eastern Time as UTC ISO string
   const now = new Date();
-  const next = new Date(now);
-  next.setDate(next.getDate() + 1);
-  next.setHours(0, 0, 0, 0);
-  return next.toISOString();
+  // Get current date in ET
+  const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  // Build next midnight ET
+  const nextMidnightET = new Date(etNow);
+  nextMidnightET.setDate(nextMidnightET.getDate() + 1);
+  nextMidnightET.setHours(0, 0, 0, 0);
+  // Convert back: ET offset is UTC-4 (EDT) or UTC-5 (EST)
+  // Use the difference between local parse and actual UTC to get offset
+  const etOffset = now.getTime() - etNow.getTime();
+  return new Date(nextMidnightET.getTime() + etOffset).toISOString();
 }
 
 function buildClues(pokemon, speciesData, stage, flavorText) {

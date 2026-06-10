@@ -87,6 +87,26 @@ async function initSchema() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS notify_updates BOOLEAN DEFAULT FALSE;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS agreed_to_terms BOOLEAN DEFAULT FALSE;
     `);
+    // Friends system tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS friend_invites (
+        id SERIAL PRIMARY KEY,
+        inviter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_friend_invites_token ON friend_invites(token);
+
+      CREATE TABLE IF NOT EXISTS friendships (
+        id SERIAL PRIMARY KEY,
+        user_a_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_b_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(user_a_id, user_b_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_friendships_a ON friendships(user_a_id);
+      CREATE INDEX IF NOT EXISTS idx_friendships_b ON friendships(user_b_id);
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

@@ -239,6 +239,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- LEADERBOARD LIST -->
 <div class="lb-list" id="lbList"></div>
 
+<!-- FRIENDS LIST (populated dynamically) -->
+<div class="lb-list" id="friendsList" style="display:none;"></div>
+
 <!-- FRIENDS EMPTY -->
 <div class="friends-empty" id="friendsEmpty" style="display:none;">
   <div class="fe-icon">&#128101;</div>
@@ -272,6 +275,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <script>
 let STREAK_DATA = [];
 let POINTS_DATA = [];
+let FRIENDS_DATA = [];
 let mainTab = 'global', subTab = 'streak';
 const username = localStorage.getItem('vaultiac_username') || 'Player';
 
@@ -369,7 +373,8 @@ function switchMain(tab) {
     document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab)
   );
   document.getElementById('lbList').style.display = tab === 'global' ? 'flex' : 'none';
-  document.getElementById('friendsEmpty').style.display = tab === 'friends' ? 'block' : 'none';
+  document.getElementById('friendsEmpty').style.display = 'none';
+  document.getElementById('friendsList').style.display = 'none';
   document.getElementById('personalPanel').style.display = tab === 'personal' ? 'block' : 'none';
   document.getElementById('subtabs').style.display = tab === 'personal' ? 'none' : 'flex';
   document.getElementById('catFilter').style.display = tab === 'personal' ? 'none' : 'flex';
@@ -379,14 +384,118 @@ function switchMain(tab) {
     : 'Updated daily · Pokemon trivia';
 
   if (tab === 'personal') loadPersonalPanel();
+  if (tab === 'friends') loadFriendsTab();
+}
+
+async function loadFriendsTab() {
+  const token = VaultAuth.getToken();
+  if (!token) {
+    const fe = document.getElementById('friendsEmpty');
+    fe.style.display = 'block';
+    fe.querySelector('.fe-title').textContent = 'Sign in to invite friends';
+    fe.querySelector('.fe-sub').textContent = 'Sign in to invite friends and compare scores.';
+    const invBtn = fe.querySelector('.invite-btn');
+    invBtn.textContent = '🔑 Sign In';
+    invBtn.onclick = () => openAuthModal('login');
+    document.getElementById('inviteConfirm').textContent = '';
+    document.getElementById('inviteConfirm').style.display = 'none';
+    return;
+  }
+
+  // Reset invite button to default
+  const fe = document.getElementById('friendsEmpty');
+  fe.querySelector('.fe-title').textContent = 'No friends yet';
+  fe.querySelector('.fe-sub').textContent = 'Invite friends to compete on a private leaderboard. First one to a 30-day streak wins bragging rights.';
+  const invBtn = fe.querySelector('.invite-btn');
+  invBtn.textContent = '🔗 Copy invite link';
+  invBtn.onclick = copyInvite;
+  document.getElementById('inviteConfirm').style.display = '';
+
+  try {
+    const res = await fetch('/api/friends/list', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    const friends = json.data || [];
+
+    if (friends.length === 0) {
+      fe.style.display = 'block';
+      document.getElementById('friendsList').style.display = 'none';
+    } else {
+      fe.style.display = 'none';
+      renderFriendsList();
+    }
+  } catch (e) {
+    fe.style.display = 'block';
+  }
+}
+
+async function renderFriendsList() {
+  const sort = subTab;
+  const token = VaultAuth.getToken();
+  const fl = document.getElementById('friendsList');
+  fl.style.display = 'flex';
+  fl.innerHTML = '';
+  try {
+    const res = await fetch('/api/friends/leaderboard?sort=' + sort, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    const data = (json.data || []).map((d, i) => ({
+      rank: i + 1,
+      name: d.username,
+      av: 'av' + ((i % 10) + 1),
+      streak: d.current_streak || 0,
+      best: d.longest_streak || 0,
+      pts: d.total_points || 0,
+    }));
+
+    data.forEach((d, i) => {
+      const topClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+      const rankDisplay = i < 3
+        ? ['&#129351;','&#129352;','&#129353;'][i]
+        : `<span class="lb-rank-med">${d.rank}</span>`;
+      const mainVal = sort === 'streak' ? d.streak : d.pts;
+      const mainUnit = sort === 'streak' ? 'day streak' : 'pts total';
+      const subLine = sort === 'streak'
+        ? `Best: ${d.best} days${d.streak > 20 ? ' <span class="streak-badge sb-hot">🔥 HOT</span>' : d.streak > 10 ? ' <span class="streak-badge sb-fire">active</span>' : ''}`
+        : `Current streak: ${d.streak} days`;
+      const row = document.createElement('div');
+      row.className = `lb-row ${topClass}`;
+      row.innerHTML = `
+        <div class="lb-rank">${rankDisplay}</div>
+        <div class="lb-avatar ${d.av}">⚡</div>
+        <div class="lb-info">
+          <div class="lb-name">${d.name}</div>
+          <div class="lb-sub">${subLine}</div>
+        </div>
+        <div class="lb-val">
+          <div class="num">${mainVal}</div>
+          <div class="unit">${mainUnit}</div>
+        </div>`;
+      fl.appendChild(row);
+    });
+  } catch (e) {
+    fl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Could not load friends leaderboard.</div>';
+  }
+}
+
+function openAuthModal(tab) {
+  // Navigate home with auth intent stored
+  sessionStorage.setItem('auth_open_tab', tab || 'signup');
+  window.location.href = 'vaultiac-home.html';
 }
 
 function switchSub(sub) {
   subTab = sub;
   document.getElementById('subStreak').classList.toggle('active', sub === 'streak');
   document.getElementById('subPoints').classList.toggle('active', sub === 'points');
-  renderList();
-  loadYourCard();
+  if (mainTab === 'friends') {
+    renderFriendsList();
+  } else {
+    renderList();
+    loadYourCard();
+  }
 }
 
 function renderList() {
@@ -427,11 +536,35 @@ function renderList() {
   });
 }
 
-function copyInvite(){
-  navigator.clipboard.writeText('https://vaultiac.com').catch(()=>{});
-  const c=document.getElementById('inviteConfirm');
-  c.classList.add('show');
-  setTimeout(()=>c.classList.remove('show'),2200);
+async function copyInvite(){
+  const token = VaultAuth.getToken();
+  if (!token) {
+    const c = document.getElementById('inviteConfirm');
+    c.textContent = 'You need a free account to invite friends.';
+    c.classList.add('show');
+    setTimeout(() => { c.classList.remove('show'); c.textContent = 'Link copied!'; }, 3000);
+    openAuthModal('signup');
+    return;
+  }
+  try {
+    const res = await fetch('/api/friends/invite', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    if (!json.token) throw new Error('no token');
+    const link = 'https://vaultiac.com/vaultiac-leaderboard.html?invite=' + json.token;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    const c = document.getElementById('inviteConfirm');
+    c.textContent = 'Link copied!';
+    c.classList.add('show');
+    setTimeout(() => c.classList.remove('show'), 2200);
+  } catch (e) {
+    const c = document.getElementById('inviteConfirm');
+    c.textContent = 'Could not generate link.';
+    c.classList.add('show');
+    setTimeout(() => { c.classList.remove('show'); c.textContent = 'Link copied!'; }, 3000);
+  }
 }
 
 // Build activity calendar — last 30 days
@@ -454,6 +587,57 @@ document.querySelectorAll('.cf-btn').forEach(btn=>{
     btn.classList.add('active');
   });
 });
+
+// Handle ?invite=TOKEN on page load
+(async function handleInviteParam() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = params.get('invite');
+  if (!inviteToken) return;
+
+  // Strip param from URL immediately
+  params.delete('invite');
+  const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+  history.replaceState(null, '', newUrl);
+
+  // Wait for auth to initialise
+  const user = await VaultAuth.getUser();
+
+  if (!user) {
+    sessionStorage.setItem('pending_invite', inviteToken);
+    sessionStorage.setItem('auth_open_tab', 'signup');
+    // Show message via a quick toast then redirect
+    showToast('Create a free account to join your friend\'s leaderboard.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/friends/join/' + encodeURIComponent(inviteToken), {
+      headers: { 'Authorization': 'Bearer ' + VaultAuth.getToken() }
+    });
+    const json = await res.json();
+    if (res.ok) {
+      showToast('Friend added! You\'re now connected.');
+    } else {
+      showToast(json.error || 'Could not join invite.');
+    }
+  } catch (e) {
+    showToast('Could not process invite link.');
+  }
+})();
+
+function showToast(msg) {
+  let t = document.getElementById('vaultToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'vaultToast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1a2e;border:1px solid rgba(124,232,214,.3);color:#7ce8d6;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;z-index:999;transition:opacity .3s;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
+}
 
 window.addEventListener('load', loadLeaderboard);
 

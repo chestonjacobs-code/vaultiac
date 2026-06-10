@@ -340,6 +340,7 @@ const VaultAuth = (() => {
         await VaultAuth.signup(email, password, username, notifyUpdates, agreedToTerms);
         closeModal();
         updateButton();
+        await processPendingInvite();
       } catch(e) {
         errorEl.textContent = e.message;
         submitBtn.disabled = false; submitBtn.textContent = 'Create Account';
@@ -370,6 +371,7 @@ const VaultAuth = (() => {
         await VaultAuth.login(email, password);
         closeModal();
         updateButton();
+        await processPendingInvite();
       } catch(e) {
         errorEl.textContent = e.message;
         submitBtn.disabled = false; submitBtn.textContent = 'Log In';
@@ -379,6 +381,38 @@ const VaultAuth = (() => {
     document.getElementById('vaLoginPassword').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('vaLoginSubmit').click();
     });
+  }
+
+  // ---- PENDING INVITE ----
+  async function processPendingInvite() {
+    const inviteToken = sessionStorage.getItem('pending_invite');
+    if (!inviteToken) return;
+    sessionStorage.removeItem('pending_invite');
+    const token = VaultAuth.getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/api/friends/join/' + encodeURIComponent(inviteToken), {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const json = await res.json();
+      showGlobalToast(res.ok ? 'Friend added!' : (json.error || 'Could not process invite.'));
+    } catch (e) {
+      showGlobalToast('Could not process invite link.');
+    }
+  }
+
+  function showGlobalToast(msg) {
+    let t = document.getElementById('vaultToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'vaultToast';
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1a2e;border:1px solid rgba(124,232,214,.3);color:#7ce8d6;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;z-index:999;transition:opacity .3s;pointer-events:none;white-space:nowrap;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._hide);
+    t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
   }
 
   // ---- EVENT LISTENERS ----

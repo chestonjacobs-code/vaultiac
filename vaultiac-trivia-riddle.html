@@ -288,12 +288,30 @@ async function loadDailyTrivia() {
 
   if (inputZone) inputZone.style.pointerEvents = 'none';
 
-  // ===== DAILY LOCK CHECK (localStorage) =====
+  // ===== DAILY LOCK CHECK =====
+  // For logged-in users: check server (source of truth)
+  // For guests: check localStorage
   const currentPeriod = getCurrentPeriod();
-  const storedPeriod = localStorage.getItem('vaultiac_trivia_period');
+  const currentUsername = localStorage.getItem('vaultiac_username');
+  const isLoggedIn = currentUsername && currentUsername !== 'Player';
 
-  if (storedPeriod === currentPeriod) {
-    const lastPokemon = localStorage.getItem('vaultiac_trivia_last');
+  let alreadyPlayed = false;
+  let lastPokemon = localStorage.getItem('vaultiac_trivia_last');
+
+  if (isLoggedIn) {
+    try {
+      const statusRes = await fetch(`/api/trivia/status?username=${encodeURIComponent(currentUsername)}`);
+      const statusData = await statusRes.json();
+      alreadyPlayed = !statusData.can_play;
+    } catch (e) {
+      // If server check fails, fall back to localStorage
+      alreadyPlayed = localStorage.getItem('vaultiac_trivia_period') === currentPeriod;
+    }
+  } else {
+    alreadyPlayed = localStorage.getItem('vaultiac_trivia_period') === currentPeriod;
+  }
+
+  if (alreadyPlayed) {
     const container = clueContainer || document.querySelector('.clues') || document.body;
     const lockEl = document.createElement('div');
     lockEl.style.cssText = 'text-align:center;padding:40px 20px;';

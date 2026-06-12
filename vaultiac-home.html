@@ -600,7 +600,7 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
 
 /* ===== TODAY'S MOVER WIDGET ===== */
 .mover-section{position:relative;z-index:2;width:100%;display:flex;justify-content:center;
-  padding:0 clamp(20px,5vw,40px) 60px;}
+  padding:48px clamp(20px,5vw,40px) 60px;}
 .market-pulse{
   width:100%;max-width:560px;border-radius:22px;padding:20px 20px 18px;
   position:relative;overflow:hidden;cursor:default;
@@ -1540,39 +1540,6 @@ reveals.forEach(r=>ro.observe(r));
   window.addEventListener('load', checkNotifyState);
 })();
 
-// ===== MARKET PULSE =====
-document.getElementById('mpDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
-(function(){
-  const prices=[336,352,344,368,378,390,408];
-  const svg=document.getElementById('sparkline');
-  const W=200,H=28,pad=3;
-  const min=Math.min(...prices),max=Math.max(...prices),range=max-min||1;
-  const pts=prices.map((p,i)=>[pad+(i/(prices.length-1))*(W-pad*2), H-pad-((p-min)/range)*(H-pad*2)]);
-  const fillD=`M${pts[0][0]},${H} `+pts.map(([x,y])=>`L${x},${y}`).join(' ')+` L${pts[pts.length-1][0]},${H} Z`;
-  const fill=document.createElementNS('http://www.w3.org/2000/svg','path');
-  fill.setAttribute('d',fillD); fill.setAttribute('fill','url(#sparkGrad)'); fill.setAttribute('opacity','0.3');
-  const lineD=`M`+pts.map(([x,y])=>`${x},${y}`).join(' L');
-  const line=document.createElementNS('http://www.w3.org/2000/svg','path');
-  line.setAttribute('d',lineD); line.setAttribute('fill','none'); line.setAttribute('stroke','#7ce8d6');
-  line.setAttribute('stroke-width','1.8'); line.setAttribute('stroke-linecap','round');
-  const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  dot.setAttribute('cx',pts[pts.length-1][0]); dot.setAttribute('cy',pts[pts.length-1][1]);
-  dot.setAttribute('r','3'); dot.setAttribute('fill','#7ce8d6');
-  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-  defs.innerHTML=`<linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ce8d6"/><stop offset="100%" stop-color="#7ce8d6" stop-opacity="0"/></linearGradient>`;
-  svg.appendChild(defs); svg.appendChild(fill); svg.appendChild(line); svg.appendChild(dot);
-})();
-document.getElementById('mpShareNative').addEventListener('click',()=>{
-  const url=window.location.href;
-  if(navigator.share){ navigator.share({title:"Today's Mover — Vaultiac",text:"Charizard ex SIR is up 8% today — $408 on eBay. Via @Vaultiac",url}); }
-  else{ navigator.clipboard.writeText(url).catch(()=>{}); const b=document.getElementById('mpShareNative'); b.textContent='✓ Copied'; setTimeout(()=>{ b.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share`; },2000); }
-});
-document.getElementById('mpCopyLink').addEventListener('click',()=>{
-  navigator.clipboard.writeText(window.location.href).catch(()=>{});
-  const lbl=document.getElementById('mpCopyLinkText'); lbl.textContent='Copied!';
-  setTimeout(()=>{ lbl.textContent='Copy link'; },2000);
-});
-
 // ===== SUGGESTION FOOTER =====
 (function(){
   const panel=document.getElementById('suggestPanel');
@@ -1711,6 +1678,7 @@ async function loadMover(){
     }
 
   } catch(e) {
+    console.error('loadMover error:', e);
     document.getElementById('mpCardName').textContent = 'Market data unavailable';
   }
 }

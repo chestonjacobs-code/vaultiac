@@ -597,6 +597,63 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
 .sp-submit:hover{opacity:.9;}.sp-submit:disabled{opacity:.4;cursor:default;}
 .sp-sent{display:none;text-align:center;font-size:13px;font-weight:600;color:var(--holo1);padding:12px;margin-top:4px;}
 .sp-sent.show{display:block;}
+
+/* ===== TODAY'S MOVER WIDGET ===== */
+.mover-section{position:relative;z-index:2;width:100%;display:flex;justify-content:center;
+  padding:0 clamp(20px,5vw,40px) 60px;}
+.market-pulse{
+  width:100%;max-width:560px;border-radius:22px;padding:20px 20px 18px;
+  position:relative;overflow:hidden;cursor:default;
+  background:radial-gradient(110% 60% at 50% 110%,rgba(232,194,122,.22),transparent 55%),
+    linear-gradient(155deg,#16121e 0%,#0d0b12 55%,#120d1a 100%);
+  border:1px solid rgba(232,194,122,.22);
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.market-pulse::before{
+  content:"";position:absolute;top:-50%;left:-10%;width:120%;height:90%;
+  background:conic-gradient(from 180deg,rgba(232,194,122,.2),rgba(167,139,250,.1),rgba(124,232,214,.08),rgba(232,194,122,.2));
+  filter:blur(60px);opacity:.5;pointer-events:none;
+}
+.mp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:1;}
+.mp-label{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.38em;text-transform:uppercase;font-weight:700;color:var(--gold);}
+.mp-live-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:livePulse 1.8s ease-in-out infinite;}
+@keyframes livePulse{0%,100%{opacity:.4;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+.mp-date{font-size:10px;color:var(--muted);letter-spacing:.06em;}
+.mp-main{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.mp-card-thumb{width:52px;height:72px;border-radius:7px;flex:none;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#f6d77a,#caa24d 40%,#f3e3a1 55%,#b8902f);
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.7);}
+.mp-card-thumb .ct-inner{position:absolute;inset:3px;border-radius:5px;overflow:hidden;
+  background:linear-gradient(160deg,#2b3a57,#3a2a52 60%,#202a44);
+  display:flex;align-items:center;justify-content:center;}
+.mp-card-thumb .ct-inner img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
+.mp-card-thumb .ct-glow{width:28px;height:28px;border-radius:50%;
+  background:conic-gradient(from 20deg,#fff,#a78bfa,#f0a6c8,#ffd98a,#7ce8d6,#fff);
+  filter:drop-shadow(0 0 8px rgba(167,139,250,.7));}
+.mp-card-thumb .ct-sheen{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.4) 48%,transparent 64%);
+  animation:sheenSlide 3.5s ease-in-out infinite;}
+@keyframes sheenSlide{0%,100%{transform:translateX(-100%);}50%{transform:translateX(100%);}}
+.mp-info{flex:1;min-width:0;}
+.mp-card-name{font-family:"Fraunces",serif;font-weight:900;font-size:20px;line-height:1.1;margin-bottom:3px;}
+.mp-card-set{font-size:11px;color:var(--muted2);margin-bottom:10px;}
+.mp-price-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.mp-price{font-family:"Fraunces",serif;font-weight:900;font-size:32px;line-height:1;
+  background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.mp-change{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;
+  padding:4px 10px;border-radius:999px;}
+.mp-up{background:rgba(124,232,214,.12);color:var(--holo1);border:1px solid rgba(124,232,214,.28);}
+.mp-down{background:rgba(240,100,100,.1);color:#f09090;border:1px solid rgba(240,100,100,.22);}
+.mp-spark-row{display:flex;align-items:center;gap:10px;margin-top:12px;position:relative;z-index:1;}
+.mp-spark-label{font-size:9px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;}
+.mp-sparkline{flex:1;height:28px;}
+.mp-vol{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;
+  color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--line);
+  padding:4px 10px;border-radius:999px;margin-top:10px;position:relative;z-index:1;}
+.mp-vol-dot{width:5px;height:5px;border-radius:50%;background:var(--holo1);opacity:.7;}
+.mp-foot{display:flex;align-items:center;justify-content:space-between;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--line);position:relative;z-index:1;}
+.mp-category{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.mp-disclaimer{font-size:9px;color:var(--muted);opacity:.6;}
 </style>
 </head>
 <body>
@@ -832,6 +889,41 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
 
   </div>
 </section>
+
+<!-- TODAY'S MOVER WIDGET -->
+<div class="mover-section reveal">
+  <div class="market-pulse" id="marketPulse">
+    <div class="mp-top">
+      <div class="mp-label"><span class="mp-live-dot"></span>Today's Mover</div>
+      <div class="mp-date" id="mpDate"></div>
+    </div>
+    <div class="mp-main">
+      <div class="mp-card-thumb">
+        <div class="ct-inner" id="mpThumbInner">
+          <div class="ct-glow"></div>
+        </div>
+        <div class="ct-sheen"></div>
+      </div>
+      <div class="mp-info">
+        <div class="mp-card-name" id="mpCardName">Loading&#8230;</div>
+        <div class="mp-card-set" id="mpCardSet"></div>
+        <div class="mp-price-row">
+          <span class="mp-price" id="mpPrice"></span>
+          <span class="mp-change" id="mpChange"></span>
+        </div>
+      </div>
+    </div>
+    <div class="mp-spark-row">
+      <span class="mp-spark-label">trend</span>
+      <svg class="mp-sparkline" id="mpSparkline" viewBox="0 0 200 28" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="mp-vol" id="mpVol" style="display:none;"><span class="mp-vol-dot"></span><span id="mpVolText"></span></div>
+    <div class="mp-foot">
+      <span class="mp-category">&#9889; Pokemon</span>
+      <span class="mp-disclaimer">Market data via PokemonPriceTracker</span>
+    </div>
+  </div>
+</div>
 
 <!-- SPOTLIGHT DEEP DIVE -->
 <div class="spotlight-feature" id="spotlight">
@@ -1556,6 +1648,82 @@ document.getElementById('mpCopyLink').addEventListener('click',()=>{
   let ty=0;
   panel.addEventListener('touchstart',e=>{ty=e.touches[0].clientY;},{passive:true});
   panel.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-ty>60)close();},{passive:true});
+})();
+
+// ===== TODAY'S MOVER =====
+document.getElementById('mpDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
+
+(async function loadMover(){
+  try {
+    const res = await fetch('/api/newsletter/top-mover');
+    const json = await res.json();
+    const d = json.data || json;
+    if (!d || !d.card_name) return;
+
+    document.getElementById('mpCardName').textContent = d.card_name;
+    document.getElementById('mpCardSet').textContent = d.set_name || '';
+
+    const price = parseFloat(d.sale_price);
+    document.getElementById('mpPrice').textContent = '$' + price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const pct = parseFloat(d.price_change_pct);
+    const changeEl = document.getElementById('mpChange');
+    if (!isNaN(pct) && pct !== 0) {
+      const up = pct > 0;
+      changeEl.textContent = (up ? '▲ +' : '▼ ') + Math.abs(pct).toFixed(2) + '% today';
+      changeEl.className = 'mp-change ' + (up ? 'mp-up' : 'mp-down');
+    }
+
+    // card image via Pokemon TCG API
+    try {
+      const q = encodeURIComponent(d.card_name.split(' - ')[0]);
+      const tcgRes = await fetch('https://api.pokemontcg.io/v2/cards?q=name:' + q + '&pageSize=1');
+      const tcgJson = await tcgRes.json();
+      if (tcgJson.data && tcgJson.data[0]) {
+        const img = document.createElement('img');
+        img.src = tcgJson.data[0].images.small;
+        img.alt = d.card_name;
+        const inner = document.getElementById('mpThumbInner');
+        inner.innerHTML = '';
+        inner.appendChild(img);
+      }
+    } catch(e) {}
+
+    // volume
+    if (d.volume) {
+      document.getElementById('mpVolText').textContent = d.volume + ' sales today';
+      document.getElementById('mpVol').style.display = 'inline-flex';
+    }
+
+    // sparkline — approximated trend from price
+    const svg = document.getElementById('mpSparkline');
+    const prices = [price * 0.94, price * 0.96, price * 0.95, price * 0.97, price * 0.98, price * 0.99, price];
+    const W = 200, H = 28, pad = 3;
+    const min = Math.min(...prices), max = Math.max(...prices);
+    const range = max - min || 1;
+    const pts = prices.map((p, i) => {
+      const x = pad + (i / (prices.length - 1)) * (W - pad * 2);
+      const y = H - pad - ((p - min) / range) * (H - pad * 2);
+      return [x, y];
+    });
+    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs.innerHTML = '<linearGradient id="sparkGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ce8d6"/><stop offset="100%" stop-color="#7ce8d6" stop-opacity="0"/></linearGradient>';
+    const fillD = 'M'+pts[0][0]+','+H+' '+pts.map(([x,y])=>'L'+x+','+y).join(' ')+' L'+pts[pts.length-1][0]+','+H+' Z';
+    const fillEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+    fillEl.setAttribute('d',fillD); fillEl.setAttribute('fill','url(#sparkGrad2)'); fillEl.setAttribute('opacity','0.3');
+    const lineD = 'M'+pts.map(([x,y])=>x+','+y).join(' L');
+    const lineEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+    lineEl.setAttribute('d',lineD); lineEl.setAttribute('fill','none');
+    lineEl.setAttribute('stroke','#7ce8d6'); lineEl.setAttribute('stroke-width','1.8');
+    lineEl.setAttribute('stroke-linecap','round'); lineEl.setAttribute('stroke-linejoin','round');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',pts[pts.length-1][0]); dot.setAttribute('cy',pts[pts.length-1][1]);
+    dot.setAttribute('r','3'); dot.setAttribute('fill','#7ce8d6');
+    svg.appendChild(defs); svg.appendChild(fillEl); svg.appendChild(lineEl); svg.appendChild(dot);
+
+  } catch(e) {
+    document.getElementById('mpCardName').textContent = 'Market data unavailable';
+  }
 })();
 </script>
 <script src="/js/api.js"></script>

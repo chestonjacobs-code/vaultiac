@@ -1653,7 +1653,7 @@ document.getElementById('mpCopyLink').addEventListener('click',()=>{
 // ===== TODAY'S MOVER =====
 document.getElementById('mpDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
 
-(async function loadMover(){
+async function loadMover(){
   try {
     const res = await fetch('/api/newsletter/top-mover');
     const json = await res.json();
@@ -1749,7 +1749,22 @@ document.getElementById('mpDate').textContent = new Date().toLocaleDateString('e
   } catch(e) {
     document.getElementById('mpCardName').textContent = 'Market data unavailable';
   }
-})();
+}
+loadMover();
+
+// ===== MIDNIGHT REFRESH =====
+function scheduleMidnightRefresh() {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setDate(now.getDate() + 1);
+  nextMidnight.setHours(0, 0, 5, 0);
+  const msUntilMidnight = nextMidnight - now;
+  setTimeout(function() {
+    loadMover();
+    scheduleMidnightRefresh();
+  }, msUntilMidnight);
+}
+scheduleMidnightRefresh();
 </script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>

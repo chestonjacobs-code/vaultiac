@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Market Pulse — VAULTIAC</title>
+<title>Market Pulse - VAULTIAC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -97,22 +97,22 @@ html,body{min-height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;
 
 <!-- TOP MOVER -->
 <div class="top-mover" id="topMoverCard">
-  <div class="tm-label">Top Mover Today</div>
+  <div class="tm-label" id="mpDate"></div>
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
     <div id="tmCardImg" style="width:60px;height:84px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);flex:none;display:flex;align-items:center;justify-content:center;">
-      <span style="font-size:20px;opacity:.3;">🃏</span>
+      <div class="ct-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><span style="font-size:20px;opacity:.3;">&#127183;</span></div>
     </div>
-    <div>
-      <div class="tm-name top-card-name">Loading…</div>
-      <div class="tm-set mover-set-top" style="margin-bottom:0;">—</div>
+    <div class="mp-info">
+      <div class="mp-card-name">Loading&#8230;</div>
+      <div class="mp-card-set"></div>
+      <div class="mp-price-row" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <span class="mp-price"></span>
+        <span class="mp-change mp-up"></span>
+      </div>
     </div>
   </div>
-  <div class="tm-stats">
-    <div class="tm-price-wrap">
-      <div class="tm-price-label">Market Price</div>
-      <div class="tm-price card-price">—</div>
-      <div class="tm-change up card-change">—</div>
-    </div>
+  <div class="tm-stats" style="margin-top:10px;">
+    <svg id="sparkline" viewBox="0 0 200 28" preserveAspectRatio="none" style="width:100%;height:28px;"></svg>
   </div>
 </div>
 
@@ -124,51 +124,98 @@ html,body{min-height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;
 </div>
 
 <script>
-async function loadTopMover() {
+// DATE
+document.getElementById('mpDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
+
+(async function loadMover(){
   try {
     const res = await fetch('/api/newsletter/top-mover');
-    const data = await res.json();
-    const card = data.data;
-    if (!card) return;
+    const json = await res.json();
+    const d = json.data || json;
+    if (!d || !d.card_name) return;
 
-    // Update card name
-    const nameEl = document.querySelector('.top-card-name');
-    if (nameEl) nameEl.textContent = card.card_name;
+    document.querySelector('.mp-card-name').textContent = d.card_name;
+    document.querySelector('.mp-card-set').textContent = d.set_name || '';
 
-    // Fetch card image from TCG API using card name
+    const price = parseFloat(d.sale_price);
+    document.querySelector('.mp-price').textContent = '$' + price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const pct = parseFloat(d.price_change_pct);
+    const changeEl = document.querySelector('.mp-change');
+    if (!isNaN(pct) && pct !== 0) {
+      const up = pct > 0;
+      changeEl.textContent = (up ? '▲ +' : '▼ ') + Math.abs(pct).toFixed(2) + '% today';
+      changeEl.className = 'mp-change ' + (up ? 'mp-up' : 'mp-down');
+    }
+
+    // card image
     try {
-      const tcgRes = await fetch(`/api/cards/search?q=${encodeURIComponent(card.card_name)}`);
-      const tcgData = await tcgRes.json();
-      const tcgCards = tcgData.data || [];
-      if (tcgCards.length > 0 && tcgCards[0].images) {
-        const imgContainer = document.getElementById('tmCardImg');
-        if (imgContainer) {
-          imgContainer.innerHTML = `<img src="${tcgCards[0].images.small}" alt="${card.card_name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>`;
-        }
+      const q = encodeURIComponent(d.card_name.split(' - ')[0]);
+      const tcgRes = await fetch('https://api.pokemontcg.io/v2/cards?q=name:' + q + '&pageSize=1');
+      const tcgJson = await tcgRes.json();
+      if (tcgJson.data && tcgJson.data[0]) {
+        const imgSrc = tcgJson.data[0].images.small;
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = d.card_name;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
+        const inner = document.querySelector('.ct-inner');
+        inner.innerHTML = '';
+        inner.appendChild(img);
       }
-    } catch (imgErr) {
-      console.warn('Could not load card image:', imgErr);
-    }
+    } catch(e) {}
 
-    // Update set
-    const setEl = document.querySelector('.mover-set-top');
-    if (setEl && card.set_name) setEl.textContent = card.set_name;
+    // share text
+    const shareText = d.card_name + ' is ' + (pct > 0 ? 'up' : 'down') + ' ' + Math.abs(pct).toFixed(2) + '% today - $' + price.toFixed(2) + '. Via @Vaultiac';
+    const shareUrl = window.location.href;
 
-    // Update price
-    const priceEl = document.querySelector('.card-price');
-    if (priceEl) priceEl.textContent = '$' + parseFloat(card.sale_price).toFixed(2);
+    const shareNativeEl = document.getElementById('shareNative');
+    if (shareNativeEl) shareNativeEl.addEventListener('click', () => {
+      if (navigator.share) {
+        navigator.share({ title: "Today's Mover - Vaultiac", text: shareText, url: shareUrl });
+      } else {
+        navigator.clipboard.writeText(shareUrl).catch(()=>{});
+        shareNativeEl.textContent = 'Copied';
+        setTimeout(() => { shareNativeEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share'; }, 2000);
+      }
+    });
 
-    // Update change %
-    const changeEl = document.querySelector('.card-change');
-    if (changeEl) {
-      const pct = parseFloat(card.price_change_pct) || 0;
-      changeEl.textContent = (pct >= 0 ? '▲ +' : '▼ ') + pct.toFixed(1) + '%';
-      changeEl.className = 'tm-change card-change ' + (pct >= 0 ? 'up' : 'down');
-    }
-  } catch (err) {
-    console.warn('Could not load top mover:', err);
+    const copyLinkEl = document.getElementById('copyLink');
+    if (copyLinkEl) copyLinkEl.addEventListener('click', () => {
+      navigator.clipboard.writeText(shareUrl).catch(()=>{});
+      const lbl = document.getElementById('copyLinkText');
+      if (lbl) { lbl.textContent = 'Copied!'; setTimeout(() => { lbl.textContent = 'Copy link'; }, 2000); }
+    });
+
+    // sparkline
+    const svg = document.getElementById('sparkline');
+    const prices = [price*0.94, price*0.96, price*0.95, price*0.97, price*0.98, price*0.99, price];
+    const W=200, H=28, pad=3;
+    const min=Math.min(...prices), max=Math.max(...prices), range=max-min||1;
+    const pts = prices.map((p,i) => {
+      const x = pad + (i/(prices.length-1))*(W-pad*2);
+      const y = H - pad - ((p-min)/range)*(H-pad*2);
+      return [x,y];
+    });
+    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs.innerHTML = '<linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ce8d6"/><stop offset="100%" stop-color="#7ce8d6" stop-opacity="0"/></linearGradient>';
+    const fillD = 'M'+pts[0][0]+','+H+' '+pts.map(([x,y])=>'L'+x+','+y).join(' ')+' L'+pts[pts.length-1][0]+','+H+' Z';
+    const fillEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+    fillEl.setAttribute('d',fillD); fillEl.setAttribute('fill','url(#sparkGrad)'); fillEl.setAttribute('opacity','0.3');
+    const lineD = 'M'+pts.map(([x,y])=>x+','+y).join(' L');
+    const lineEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+    lineEl.setAttribute('d',lineD); lineEl.setAttribute('fill','none');
+    lineEl.setAttribute('stroke','#7ce8d6'); lineEl.setAttribute('stroke-width','1.8');
+    lineEl.setAttribute('stroke-linecap','round'); lineEl.setAttribute('stroke-linejoin','round');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',pts[pts.length-1][0]); dot.setAttribute('cy',pts[pts.length-1][1]);
+    dot.setAttribute('r','3'); dot.setAttribute('fill','#7ce8d6');
+    svg.appendChild(defs); svg.appendChild(fillEl); svg.appendChild(lineEl); svg.appendChild(dot);
+
+  } catch(e) {
+    document.querySelector('.mp-card-name').textContent = 'Market data unavailable';
   }
-}
+})();
 
 async function loadTopMovers() {
   try {
@@ -178,7 +225,7 @@ async function loadTopMovers() {
     const list = document.getElementById('moversList');
 
     if (cards.length === 0) {
-      list.innerHTML = '<div class="loading">No market data yet — check back soon.</div>';
+      list.innerHTML = '<div class="loading">No market data yet - check back soon.</div>';
       return;
     }
 
@@ -190,7 +237,7 @@ async function loadTopMovers() {
           <div class="mover-rank ${i === 0 ? 'gold' : ''}">#${i + 1}</div>
           <div class="mover-info">
             <div class="mover-name">${card.card_name}</div>
-            <div class="mover-set">${card.set_name || '—'}</div>
+            <div class="mover-set">${card.set_name || '-'}</div>
           </div>
           <div class="mover-right">
             <div class="mover-price">$${parseFloat(card.sale_price).toFixed(2)}</div>
@@ -201,14 +248,10 @@ async function loadTopMovers() {
     }).join('');
   } catch (err) {
     document.getElementById('moversList').innerHTML = '<div class="loading">Failed to load market data.</div>';
-    console.warn('Could not load top movers:', err);
   }
 }
 
-window.addEventListener('load', () => {
-  loadTopMover();
-  loadTopMovers();
-});
+loadTopMovers();
 </script>
 
 <script src="/js/api.js"></script>

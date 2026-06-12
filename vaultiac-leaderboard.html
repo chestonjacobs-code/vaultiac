@@ -245,10 +245,14 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- FRIENDS EMPTY -->
 <div class="friends-empty" id="friendsEmpty" style="display:none;">
   <div class="fe-icon">&#128101;</div>
-  <div class="fe-title">No friends yet</div>
-  <div class="fe-sub">Invite friends to compete on a private leaderboard. First one to a 30-day streak wins bragging rights.</div>
-  <button class="invite-btn" onclick="copyInvite()">&#128279; Copy invite link</button>
+  <div class="fe-title" id="feTitle">No friends yet</div>
+  <div class="fe-sub" id="feSub">Invite friends to compete on a private leaderboard. First one to a 30-day streak wins bragging rights.</div>
+  <button class="invite-btn" id="inviteBtn" onclick="copyInvite()">&#128279; Copy invite link</button>
   <div class="invite-confirm" id="inviteConfirm">Link copied!</div>
+  <div id="guestInvitePrompt" style="display:none;">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Sign up to invite friends and track your private leaderboard.</p>
+    <button class="invite-btn" onclick="VaultAuth.openModal('signup')">Create free account</button>
+  </div>
 </div>
 
 <!-- PERSONAL PANEL -->
@@ -367,13 +371,25 @@ async function loadPersonalPanel() {
   }
 }
 
+function updateFriendsPanel(){
+  const token=localStorage.getItem('vaultiac_token');
+  const isLoggedIn=!!token;
+  document.getElementById('inviteBtn').style.display=isLoggedIn?'block':'none';
+  document.getElementById('guestInvitePrompt').style.display=isLoggedIn?'none':'block';
+  document.getElementById('feTitle').textContent=isLoggedIn?'No friends yet':'Play with friends';
+  document.getElementById('feSub').textContent=isLoggedIn
+    ? 'Invite friends to compete on a private leaderboard. First one to a 30-day streak wins bragging rights.'
+    : 'Create a free account to invite friends and see how you stack up.';
+}
+
 function switchMain(tab) {
   mainTab = tab;
   ['global','friends','personal'].forEach(t =>
     document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab)
   );
   document.getElementById('lbList').style.display = tab === 'global' ? 'flex' : 'none';
-  document.getElementById('friendsEmpty').style.display = 'none';
+  document.getElementById('friendsEmpty').style.display = tab==='friends'?'block':'none';
+  if(tab==='friends') updateFriendsPanel();
   document.getElementById('friendsList').style.display = 'none';
   document.getElementById('personalPanel').style.display = tab === 'personal' ? 'block' : 'none';
   document.getElementById('subtabs').style.display = tab === 'personal' ? 'none' : 'flex';
@@ -537,34 +553,28 @@ function renderList() {
 }
 
 async function copyInvite(){
-  const token = VaultAuth.getToken();
-  if (!token) {
-    const c = document.getElementById('inviteConfirm');
-    c.textContent = 'You need a free account to invite friends.';
-    c.classList.add('show');
-    setTimeout(() => { c.classList.remove('show'); c.textContent = 'Link copied!'; }, 3000);
-    openAuthModal('signup');
-    return;
-  }
+  const btn=document.getElementById('inviteBtn');
+  const c=document.getElementById('inviteConfirm');
+  btn.disabled=true;
+  btn.textContent='Generating link…';
   try {
-    const res = await fetch('/api/friends/invite', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token }
+    const token=localStorage.getItem('vaultiac_token');
+    const res=await fetch('/api/friends/invite',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token}
     });
-    const json = await res.json();
-    if (!json.token) throw new Error('no token');
-    const link = 'https://vaultiac.com/vaultiac-leaderboard.html?invite=' + json.token;
-    await navigator.clipboard.writeText(link).catch(() => {});
-    const c = document.getElementById('inviteConfirm');
-    c.textContent = 'Link copied!';
-    c.classList.add('show');
-    setTimeout(() => c.classList.remove('show'), 2200);
-  } catch (e) {
-    const c = document.getElementById('inviteConfirm');
-    c.textContent = 'Could not generate link.';
-    c.classList.add('show');
-    setTimeout(() => { c.classList.remove('show'); c.textContent = 'Link copied!'; }, 3000);
+    const data=await res.json();
+    if(!res.ok||!data.token) throw new Error(data.error||'Failed');
+    const invite_link='https://vaultiac.com/vaultiac-leaderboard.html?invite='+data.token;
+    await navigator.clipboard.writeText(invite_link);
+    c.textContent='Link copied!';
+  } catch(err) {
+    c.textContent='Could not generate link. Try again.';
   }
+  c.classList.add('show');
+  btn.disabled=false;
+  btn.innerHTML='&#128279; Copy invite link';
+  setTimeout(()=>c.classList.remove('show'),2800);
 }
 
 // Build activity calendar — last 30 days

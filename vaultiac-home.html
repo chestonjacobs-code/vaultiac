@@ -947,11 +947,11 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
           <div class="ps-top"><div class="ps-brand">VAULTIAC</div><span class="ps-tag">card spotlight</span></div>
           <div class="ps-eyebrow">Latest Pickup</div>
           <div class="ps-big">Just Pulled It.</div>
-          <div class="ps-card"><div class="inner">✦</div></div>
-          <div class="ps-name">Charizard ex ★ Alt Art</div>
-          <div class="ps-sub">Obsidian Flames · 215/197</div>
-          <div class="ps-price">$148.00</div>
-          <div class="ps-trend">▲ +18% this week</div>
+          <div class="ps-card" id="psCard"><div class="inner" id="psCardInner">✦</div></div>
+          <div class="ps-name" id="psName">Charizard ex ★ Alt Art</div>
+          <div class="ps-sub" id="psSub">Obsidian Flames · 215/197</div>
+          <div class="ps-price" id="psPrice">$148.00</div>
+          <div class="ps-trend" id="psTrend">▲ +18% this week</div>
           <div class="ps-foot"><span style="font-weight:600">@you</span><span style="color:var(--muted)">MAY 2026</span></div>
         </div>
         <div class="phone-bottom"></div>
@@ -1680,12 +1680,24 @@ document.getElementById('mpDate').textContent = new Date().toLocaleDateString('e
       const tcgRes = await fetch('https://api.pokemontcg.io/v2/cards?q=name:' + q + '&pageSize=1');
       const tcgJson = await tcgRes.json();
       if (tcgJson.data && tcgJson.data[0]) {
+        const imgSrc = tcgJson.data[0].images.small;
+
+        // widget thumb
         const img = document.createElement('img');
-        img.src = tcgJson.data[0].images.small;
+        img.src = imgSrc;
         img.alt = d.card_name;
         const inner = document.getElementById('mpThumbInner');
         inner.innerHTML = '';
         inner.appendChild(img);
+
+        // phone mockup card
+        const img2 = document.createElement('img');
+        img2.src = imgSrc;
+        img2.alt = d.card_name;
+        img2.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
+        const psInner = document.getElementById('psCardInner');
+        psInner.innerHTML = '';
+        psInner.appendChild(img2);
       }
     } catch(e) {}
 
@@ -1720,6 +1732,19 @@ document.getElementById('mpDate').textContent = new Date().toLocaleDateString('e
     dot.setAttribute('cx',pts[pts.length-1][0]); dot.setAttribute('cy',pts[pts.length-1][1]);
     dot.setAttribute('r','3'); dot.setAttribute('fill','#7ce8d6');
     svg.appendChild(defs); svg.appendChild(fillEl); svg.appendChild(lineEl); svg.appendChild(dot);
+
+    // populate phone mockup
+    document.getElementById('psName').textContent = d.card_name;
+    document.getElementById('psSub').textContent = d.set_name || '';
+    document.getElementById('psPrice').textContent = '$' + price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if (!isNaN(pct) && pct !== 0) {
+      const up = pct > 0;
+      const trendEl = document.getElementById('psTrend');
+      trendEl.textContent = (up ? '▲ +' : '▼ ') + Math.abs(pct).toFixed(2) + '% today';
+      trendEl.style.color = up ? 'var(--holo1)' : '#f09090';
+      trendEl.style.background = up ? 'rgba(124,232,214,.1)' : 'rgba(240,100,100,.1)';
+      trendEl.style.borderColor = up ? 'rgba(124,232,214,.25)' : 'rgba(240,100,100,.22)';
+    }
 
   } catch(e) {
     document.getElementById('mpCardName').textContent = 'Market data unavailable';

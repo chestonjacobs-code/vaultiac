@@ -183,8 +183,8 @@ async function runScrapeJob() {
   for (const row of marketRows) {
     try {
       await pool.query(
-        'INSERT INTO market_data (card_name, set_name, sale_price, volume, source, recorded_date) VALUES ($1,$2,$3,$4,$5,$6)',
-        [row.card_name, row.set_name, row.sale_price, row.volume, row.source, row.recorded_date]
+        'INSERT INTO market_data (card_name, set_name, sale_price, volume, source, recorded_date, price_change_pct) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+        [row.card_name, row.set_name, row.sale_price, row.volume, row.source, row.recorded_date, row.price_change_pct]
       );
     } catch (err) {
       console.error('[newsletter-scrape] Market insert failed:', err.message);

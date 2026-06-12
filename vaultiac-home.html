@@ -714,48 +714,39 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
   <div class="marquee-track" id="marqueeTrack"></div>
 </div>
 
-<!-- MARKET PULSE WIDGET -->
-<div style="position:relative;z-index:2;width:100%;display:flex;justify-content:center;padding:48px clamp(20px,5vw,40px) 0;">
-<div class="market-pulse">
-  <div class="mp-top">
-    <div class="mp-label"><span class="mp-live-dot"></span>Today's Mover</div>
-    <div class="mp-date" id="mpDate">—</div>
-  </div>
-  <div class="mp-main">
-    <div class="mp-card-thumb">
-      <div class="ct-inner">
-        <div class="ct-glow"></div>
+<!-- TODAY'S MOVER WIDGET -->
+<div class="mover-section reveal">
+  <div class="market-pulse" id="marketPulse">
+    <div class="mp-top">
+      <div class="mp-label"><span class="mp-live-dot"></span>Today's Mover</div>
+      <div class="mp-date" id="mpDate"></div>
+    </div>
+    <div class="mp-main">
+      <div class="mp-card-thumb">
+        <div class="ct-inner" id="mpThumbInner">
+          <div class="ct-glow"></div>
+        </div>
+        <div class="ct-sheen"></div>
       </div>
-      <div class="ct-sheen"></div>
-    </div>
-    <div class="mp-info">
-      <div class="mp-card-name">Charizard ex SIR</div>
-      <div class="mp-card-set">Obsidian Flames · 228/197</div>
-      <div class="mp-price-row">
-        <span class="mp-price">$408</span>
-        <span class="mp-change mp-up">▲ 8% today</span>
+      <div class="mp-info">
+        <div class="mp-card-name" id="mpCardName">Loading&#8230;</div>
+        <div class="mp-card-set" id="mpCardSet"></div>
+        <div class="mp-price-row">
+          <span class="mp-price" id="mpPrice"></span>
+          <span class="mp-change" id="mpChange"></span>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="mp-spark-row">
-    <span class="mp-spark-label">7 days</span>
-    <svg class="mp-sparkline" id="sparkline" viewBox="0 0 200 28" preserveAspectRatio="none"></svg>
-  </div>
-  <div class="mp-vol"><span class="mp-vol-dot"></span>847 sales today on eBay</div>
-  <div class="mp-foot">
-    <span class="mp-category">⚡ Pokémon</span>
-    <div class="mp-share-row">
-      <button class="mp-share-btn" id="mpShareNative" title="Share">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Share
-      </button>
-      <button class="mp-share-btn" id="mpCopyLink" title="Copy link">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        <span id="mpCopyLinkText">Copy link</span>
-      </button>
+    <div class="mp-spark-row">
+      <span class="mp-spark-label">trend</span>
+      <svg class="mp-sparkline" id="mpSparkline" viewBox="0 0 200 28" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="mp-vol" id="mpVol" style="display:none;"><span class="mp-vol-dot"></span><span id="mpVolText"></span></div>
+    <div class="mp-foot">
+      <span class="mp-category">&#9889; Pokemon</span>
+      <span class="mp-disclaimer">Market data via PokemonPriceTracker</span>
     </div>
   </div>
-</div>
 </div>
 
 <!-- FEATURES — CARD PACKS -->
@@ -889,41 +880,6 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
 
   </div>
 </section>
-
-<!-- TODAY'S MOVER WIDGET -->
-<div class="mover-section reveal">
-  <div class="market-pulse" id="marketPulse">
-    <div class="mp-top">
-      <div class="mp-label"><span class="mp-live-dot"></span>Today's Mover</div>
-      <div class="mp-date" id="mpDate"></div>
-    </div>
-    <div class="mp-main">
-      <div class="mp-card-thumb">
-        <div class="ct-inner" id="mpThumbInner">
-          <div class="ct-glow"></div>
-        </div>
-        <div class="ct-sheen"></div>
-      </div>
-      <div class="mp-info">
-        <div class="mp-card-name" id="mpCardName">Loading&#8230;</div>
-        <div class="mp-card-set" id="mpCardSet"></div>
-        <div class="mp-price-row">
-          <span class="mp-price" id="mpPrice"></span>
-          <span class="mp-change" id="mpChange"></span>
-        </div>
-      </div>
-    </div>
-    <div class="mp-spark-row">
-      <span class="mp-spark-label">trend</span>
-      <svg class="mp-sparkline" id="mpSparkline" viewBox="0 0 200 28" preserveAspectRatio="none"></svg>
-    </div>
-    <div class="mp-vol" id="mpVol" style="display:none;"><span class="mp-vol-dot"></span><span id="mpVolText"></span></div>
-    <div class="mp-foot">
-      <span class="mp-category">&#9889; Pokemon</span>
-      <span class="mp-disclaimer">Market data via PokemonPriceTracker</span>
-    </div>
-  </div>
-</div>
 
 <!-- SPOTLIGHT DEEP DIVE -->
 <div class="spotlight-feature" id="spotlight">
@@ -1683,21 +1639,26 @@ async function loadMover(){
         const imgSrc = tcgJson.data[0].images.small;
 
         // widget thumb
-        const img = document.createElement('img');
-        img.src = imgSrc;
-        img.alt = d.card_name;
-        const inner = document.getElementById('mpThumbInner');
-        inner.innerHTML = '';
-        inner.appendChild(img);
+        const thumbInner = document.getElementById('mpThumbInner');
+        if (thumbInner) {
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.alt = d.card_name;
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
+          thumbInner.innerHTML = '';
+          thumbInner.appendChild(img);
+        }
 
         // phone mockup card
-        const img2 = document.createElement('img');
-        img2.src = imgSrc;
-        img2.alt = d.card_name;
-        img2.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
         const psInner = document.getElementById('psCardInner');
-        psInner.innerHTML = '';
-        psInner.appendChild(img2);
+        if (psInner) {
+          const img2 = document.createElement('img');
+          img2.src = imgSrc;
+          img2.alt = d.card_name;
+          img2.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
+          psInner.innerHTML = '';
+          psInner.appendChild(img2);
+        }
       }
     } catch(e) {}
 
@@ -1734,16 +1695,19 @@ async function loadMover(){
     svg.appendChild(defs); svg.appendChild(fillEl); svg.appendChild(lineEl); svg.appendChild(dot);
 
     // populate phone mockup
-    document.getElementById('psName').textContent = d.card_name;
-    document.getElementById('psSub').textContent = d.set_name || '';
-    document.getElementById('psPrice').textContent = '$' + price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    if (!isNaN(pct) && pct !== 0) {
+    const psNameEl = document.getElementById('psName');
+    const psSubEl = document.getElementById('psSub');
+    const psPriceEl = document.getElementById('psPrice');
+    const psTrendEl = document.getElementById('psTrend');
+    if (psNameEl) psNameEl.textContent = d.card_name;
+    if (psSubEl) psSubEl.textContent = d.set_name || '';
+    if (psPriceEl) psPriceEl.textContent = '$' + price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if (psTrendEl && !isNaN(pct) && pct !== 0) {
       const up = pct > 0;
-      const trendEl = document.getElementById('psTrend');
-      trendEl.textContent = (up ? '▲ +' : '▼ ') + Math.abs(pct).toFixed(2) + '% today';
-      trendEl.style.color = up ? 'var(--holo1)' : '#f09090';
-      trendEl.style.background = up ? 'rgba(124,232,214,.1)' : 'rgba(240,100,100,.1)';
-      trendEl.style.borderColor = up ? 'rgba(124,232,214,.25)' : 'rgba(240,100,100,.22)';
+      psTrendEl.textContent = (up ? '▲ +' : '▼ ') + Math.abs(pct).toFixed(2) + '% today';
+      psTrendEl.style.color = up ? 'var(--holo1)' : '#f09090';
+      psTrendEl.style.background = up ? 'rgba(124,232,214,.1)' : 'rgba(240,100,100,.1)';
+      psTrendEl.style.borderColor = up ? 'rgba(124,232,214,.25)' : 'rgba(240,100,100,.22)';
     }
 
   } catch(e) {

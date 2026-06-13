@@ -210,4 +210,18 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// POST /api/auth/notify-opt-in — opt logged-in user into notifications
+router.post('/notify-opt-in', requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE users SET notify_updates = TRUE WHERE id = $1',
+      [req.user.id]
+    );
+    return res.json({ success: true });
+  } catch(e) {
+    console.error('[auth] notify-opt-in error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = { router, requireAuth };

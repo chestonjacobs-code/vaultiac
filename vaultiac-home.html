@@ -2,7 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="shortcut icon" href="/favicon.svg"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="The one stop shop for Pokemon TCG collectors. Find cards, track value, and share the flex."/>
+<meta property="og:title" content="VAULTIAC - Pull it. Track it. Flex it."/>
+<meta property="og:description" content="The one stop shop for Pokemon TCG collectors. Find cards, track value, and share the flex."/>
+<meta property="og:url" content="https://vaultiac.com"/>
+<meta property="og:type" content="website"/>
+<meta property="og:image" content="https://vaultiac.com/og-image.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="VAULTIAC - Pull it. Track it. Flex it."/>
+<meta name="twitter:description" content="The one stop shop for Pokemon TCG collectors. Find cards, track value, and share the flex."/>
+<meta name="twitter:image" content="https://vaultiac.com/og-image.png"/>
 <title>VAULTIAC — Pull it. Track it. Flex it.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1497,15 +1509,65 @@ reveals.forEach(r=>ro.observe(r));
         return;
       }
     }
-    // Not logged in or not opted in — show normal form
-    document.getElementById('notifyBtn').addEventListener('click', () => {
-      const email = document.getElementById('notifyEmail').value;
+    // Logged in but not opted in — skip email form, show one-tap opt-in
+    if (VaultAuth.isLoggedIn()) {
+      wrap.innerHTML = `
+        <div style="font-size:32px;margin-bottom:12px;">🔔</div>
+        <div class="notify-title">Get notified when new features drop</div>
+        <p class="notify-sub">One tap — no email needed. We'll use your account.</p>
+        <button class="notify-btn" id="optInBtn">Notify me</button>
+        <div id="optInMsg" style="font-size:12px;color:var(--holo1);height:18px;margin-top:6px;"></div>
+      `;
+      document.getElementById('optInBtn').addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = 'Saving...';
+        try {
+          const token = VaultAuth.getToken();
+          const res = await fetch('/api/auth/notify-opt-in', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            wrap.innerHTML = `
+              <div style="font-size:32px;margin-bottom:12px;">✅</div>
+              <div class="notify-title">You're on the list.</div>
+              <p class="notify-sub">We'll let you know when new features drop. No spam — ever.</p>
+            `;
+          } else {
+            document.getElementById('optInMsg').textContent = 'Something went wrong — try again.';
+            this.disabled = false;
+            this.textContent = 'Notify me';
+          }
+        } catch(e) {
+          document.getElementById('optInMsg').textContent = 'Network error — try again.';
+          this.disabled = false;
+          this.textContent = 'Notify me';
+        }
+      });
+      return;
+    }
+
+    // Not logged in — show email capture form
+    document.getElementById('notifyBtn').addEventListener('click', async function() {
+      const emailInput = document.getElementById('notifyEmail');
+      const email = emailInput.value.trim();
       if (!email || !email.includes('@')) return;
-      const btn = document.getElementById('notifyBtn');
-      btn.textContent = "✓ You're in!";
-      btn.style.background = 'linear-gradient(90deg,#2a6a30,#4a9840)';
-      document.getElementById('notifyEmail').value = '';
-      setTimeout(() => { btn.textContent = 'Notify Me'; btn.style.background = ''; }, 3000);
+      this.disabled = true;
+      this.textContent = 'Saving...';
+      try {
+        await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Notify signup', email, type: 'Notify Me', message: 'Notify me signup from homepage.' })
+        });
+        this.textContent = "✓ You're in!";
+        this.style.background = 'linear-gradient(90deg,#2a6a30,#4a9840)';
+        emailInput.value = '';
+        setTimeout(() => { this.textContent = 'Notify Me'; this.style.background = ''; this.disabled = false; }, 3000);
+      } catch(e) {
+        this.textContent = 'Try again';
+        this.disabled = false;
+      }
     });
   }
 

@@ -494,16 +494,31 @@ document.getElementById('frontRemove').addEventListener('click', function(e) {
 });
 
 function handleFront(file) {
-  if (!file.type.startsWith('image/') && file.name && !file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i)) return;
+  if (!file) return;
+  // Accept if type starts with image/, OR if type is empty (mobile Safari HEIC), OR if extension matches
+  const typeOk = file.type.startsWith('image/') || file.type === '';
+  const extOk = file.name && file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif|bmp|tiff)$/i);
+  if (!typeOk && !extOk) return;
   if (file.size > 10 * 1024 * 1024) {
     alert('Photo is too large (max 10MB). Please use a smaller image.');
     return;
   }
   const reader = new FileReader();
+  reader.onerror = function() {
+    alert('Could not read this photo. Please try a different image.');
+  };
   reader.onload = function(e) {
-    frontDataURL = e.target.result;
+    const result = e.target.result;
+    if (!result || !result.startsWith('data:')) {
+      alert('Could not load this photo. Please try a different image.');
+      return;
+    }
+    // If mobile Safari returns empty type, patch the data URL to image/jpeg
+    frontDataURL = result.startsWith('data:;') || result.startsWith('data:application/')
+      ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
+      : result;
     document.getElementById('frontImg').src = frontDataURL;
-    document.getElementById('frontName').textContent = file.name;
+    document.getElementById('frontName').textContent = file.name || 'Photo';
     document.getElementById('frontPrompt').style.display = 'none';
     document.getElementById('frontPreview').style.display = 'block';
     frontZone.classList.add('has-image');
@@ -545,16 +560,29 @@ document.getElementById('backRemove').addEventListener('click', function(e) {
 });
 
 function handleBack(file) {
-  if (!file.type.startsWith('image/') && file.name && !file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i)) return;
+  if (!file) return;
+  const typeOk = file.type.startsWith('image/') || file.type === '';
+  const extOk = file.name && file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif|bmp|tiff)$/i);
+  if (!typeOk && !extOk) return;
   if (file.size > 10 * 1024 * 1024) {
     alert('Photo is too large (max 10MB). Please use a smaller image.');
     return;
   }
   const reader = new FileReader();
+  reader.onerror = function() {
+    alert('Could not read this photo. Please try a different image.');
+  };
   reader.onload = function(e) {
-    backDataURL = e.target.result;
+    const result = e.target.result;
+    if (!result || !result.startsWith('data:')) {
+      alert('Could not load this photo. Please try a different image.');
+      return;
+    }
+    backDataURL = result.startsWith('data:;') || result.startsWith('data:application/')
+      ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
+      : result;
     document.getElementById('backImg').src = backDataURL;
-    document.getElementById('backName').textContent = file.name;
+    document.getElementById('backName').textContent = file.name || 'Photo';
     document.getElementById('backPrompt').style.display = 'none';
     document.getElementById('backPreview').style.display = 'block';
     backZone.classList.add('has-image');
@@ -590,7 +618,10 @@ function hideResults() {
 
 // ===== ANALYZE =====
 analyzeBtn.addEventListener('click', async function() {
-  if (!frontDataURL) return;
+  if (!frontDataURL) {
+    alert('Please select a front photo first.');
+    return;
+  }
   const token = localStorage.getItem('vaultiac_token');
   if (!token) { window.vaultiacOpenAuth('signup'); return; }
 

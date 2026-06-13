@@ -194,19 +194,19 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <div class="your-card" id="yourCard">
   <div class="yc-label">Your Standing</div>
   <div class="yc-row">
-    <div class="yc-rank" id="yourRank">#14</div>
+    <div class="yc-rank" id="yourRank">--</div>
     <div class="yc-avatar">&#9889;</div>
     <div class="yc-info">
-      <div class="yc-name">You</div>
-      <div class="yc-handle">@yourhandle</div>
+      <div class="yc-name" id="yourName">--</div>
+      <div class="yc-handle" id="yourHandle"></div>
     </div>
     <div class="yc-stats">
       <div class="yc-stat">
-        <div class="val" id="yourVal">3</div>
+        <div class="val" id="yourVal">--</div>
         <div class="lbl" id="yourLbl">Streak</div>
       </div>
       <div class="yc-stat">
-        <div class="val" id="yourVal2">7</div>
+        <div class="val" id="yourVal2">--</div>
         <div class="lbl" id="yourLbl2">Best</div>
       </div>
     </div>
@@ -258,10 +258,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- PERSONAL PANEL -->
 <div class="personal-panel" id="personalPanel" style="display:none;">
   <div class="stat-grid">
-    <div class="stat-box"><div class="sb-val">3</div><div class="sb-lbl">Current Streak</div></div>
-    <div class="stat-box"><div class="sb-val">7</div><div class="sb-lbl">Best Streak</div></div>
-    <div class="stat-box"><div class="sb-val">42</div><div class="sb-lbl">Total Points</div></div>
-    <div class="stat-box"><div class="sb-val">4.2</div><div class="sb-lbl">Avg pts/day</div></div>
+    <div class="stat-box"><div class="sb-val" id="pCurStreak">--</div><div class="sb-lbl">Current Streak</div></div>
+    <div class="stat-box"><div class="sb-val" id="pBestStreak">--</div><div class="sb-lbl">Best Streak</div></div>
+    <div class="stat-box"><div class="sb-val" id="pTotalPts">--</div><div class="sb-lbl">Total Points</div></div>
+    <div class="stat-box"><div class="sb-val" id="pAvgPts">--</div><div class="sb-lbl">Avg pts/day</div></div>
   </div>
   <div class="personal-section-label">Clue Breakdown</div>
   <div class="clue-breakdown">
@@ -281,7 +281,13 @@ let STREAK_DATA = [];
 let POINTS_DATA = [];
 let FRIENDS_DATA = [];
 let mainTab = 'global', subTab = 'streak';
-const username = localStorage.getItem('vaultiac_username') || 'Player';
+function getCurrentUsername() {
+  try {
+    const u = JSON.parse(localStorage.getItem('vaultiac_user'));
+    return (u && u.username) ? u.username : null;
+  } catch(e) { return null; }
+}
+const username = getCurrentUsername();
 
 async function loadLeaderboard() {
   try {
@@ -322,6 +328,21 @@ async function loadLeaderboard() {
 }
 
 async function loadYourCard() {
+  const nameEl = document.getElementById('yourName');
+  const handleEl = document.getElementById('yourHandle');
+
+  if (!username) {
+    if (nameEl) nameEl.textContent = 'Sign in to track your standing';
+    if (handleEl) handleEl.textContent = '';
+    document.getElementById('yourRank').textContent = '--';
+    document.getElementById('yourVal').textContent = '--';
+    document.getElementById('yourVal2').textContent = '--';
+    return;
+  }
+
+  if (nameEl) nameEl.textContent = username;
+  if (handleEl) handleEl.textContent = '@' + username.toLowerCase();
+
   try {
     const res = await fetch(`/api/leaderboard/user/${encodeURIComponent(username)}`);
     if (!res.ok) return;
@@ -330,25 +351,29 @@ async function loadYourCard() {
     if (!user) return;
 
     if (subTab === 'streak') {
-      const el1 = document.getElementById('yourVal');
-      const el2 = document.getElementById('yourVal2');
-      if (el1) el1.textContent = user.current_streak || 0;
-      if (el2) el2.textContent = user.longest_streak || 0;
+      document.getElementById('yourVal').textContent = user.current_streak || 0;
+      document.getElementById('yourVal2').textContent = user.longest_streak || 0;
     } else {
-      const el1 = document.getElementById('yourVal');
-      if (el1) el1.textContent = user.total_points || 0;
+      document.getElementById('yourVal').textContent = user.total_points || 0;
+      document.getElementById('yourVal2').textContent = user.longest_streak || 0;
     }
 
     const data_arr = subTab === 'streak' ? STREAK_DATA : POINTS_DATA;
     const rankIdx = data_arr.findIndex(d => d.name === username);
-    const rankEl = document.getElementById('yourRank');
-    if (rankEl) rankEl.textContent = rankIdx >= 0 ? `#${rankIdx + 1}` : '--';
+    document.getElementById('yourRank').textContent = rankIdx >= 0 ? `#${rankIdx + 1}` : '--';
   } catch (err) {
     console.warn('Could not load user stats:', err);
   }
 }
 
 async function loadPersonalPanel() {
+  if (!username) {
+    document.getElementById('pCurStreak').textContent = '--';
+    document.getElementById('pBestStreak').textContent = '--';
+    document.getElementById('pTotalPts').textContent = '--';
+    document.getElementById('pAvgPts').textContent = '--';
+    return;
+  }
   try {
     const res = await fetch(`/api/leaderboard/user/${encodeURIComponent(username)}`);
     if (!res.ok) return;
@@ -356,15 +381,16 @@ async function loadPersonalPanel() {
     const user = data.data;
     if (!user) return;
 
-    const boxes = document.querySelectorAll('.stat-box');
-    if (boxes[0]) boxes[0].querySelector('.sb-val').textContent = user.current_streak || 0;
-    if (boxes[1]) boxes[1].querySelector('.sb-val').textContent = user.longest_streak || 0;
-    if (boxes[2]) boxes[2].querySelector('.sb-val').textContent = user.total_points || 0;
+    document.getElementById('pCurStreak').textContent = user.current_streak || 0;
+    document.getElementById('pBestStreak').textContent = user.longest_streak || 0;
+    document.getElementById('pTotalPts').textContent = user.total_points || 0;
 
-    if (boxes[3] && user.last_played_date) {
+    if (user.last_played_date) {
       const firstPlay = new Date(user.last_played_date);
       const days = Math.max(1, Math.ceil((Date.now() - firstPlay) / 86400000));
-      boxes[3].querySelector('.sb-val').textContent = (user.total_points / days).toFixed(1);
+      document.getElementById('pAvgPts').textContent = (user.total_points / days).toFixed(1);
+    } else {
+      document.getElementById('pAvgPts').textContent = '0';
     }
   } catch (err) {
     console.warn('Could not load personal stats:', err);

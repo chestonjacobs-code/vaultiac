@@ -543,7 +543,7 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
 
 /* ===== TODAY'S MOVER WIDGET ===== */
 .mover-section{position:relative;z-index:2;width:100%;display:flex;justify-content:center;
-  padding:48px clamp(20px,5vw,40px) 24px;}
+  padding:72px clamp(20px,5vw,40px) 24px;}
 .market-pulse{
   width:100%;max-width:560px;border-radius:22px;padding:20px 20px 18px;
   position:relative;overflow:hidden;cursor:default;
@@ -1587,6 +1587,14 @@ async function loadMover(){
           img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;';
           thumbInner.innerHTML = '';
           thumbInner.appendChild(img);
+          // wire lightbox click now that image exists
+          const thumb = document.getElementById('mpCardThumb');
+          if (thumb) {
+            thumb.onclick = function() {
+              const largeSrc = imgSrc.replace('/small', '/large');
+              openLightbox(largeSrc || imgSrc, d.card_name);
+            };
+          }
         }
 
         // phone mockup card
@@ -1655,34 +1663,25 @@ async function loadMover(){
     document.getElementById('mpCardName').textContent = 'Market data unavailable';
   }
 }
+// ===== CARD LIGHTBOX SETUP =====
+const _lightbox = document.getElementById('cardLightbox');
+const _lightboxImg = document.getElementById('lightboxImg');
+
+function openLightbox(src, alt) {
+  _lightboxImg.src = src;
+  _lightboxImg.alt = alt || '';
+  _lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  _lightbox.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('lightboxClose').addEventListener('click', function(e){ e.stopPropagation(); closeLightbox(); });
+_lightbox.addEventListener('click', closeLightbox);
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
+
 loadMover();
-
-// ===== CARD LIGHTBOX =====
-(function(){
-  const lightbox = document.getElementById('cardLightbox');
-  const lightboxImg = document.getElementById('lightboxImg');
-  const lightboxClose = document.getElementById('lightboxClose');
-  const thumb = document.getElementById('mpCardThumb');
-
-  function openLightbox() {
-    const img = document.querySelector('#mpThumbInner img');
-    if (!img) return;
-    lightboxImg.src = img.src.replace('/small', '/large') || img.src;
-    lightboxImg.alt = img.alt;
-    lightbox.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeLightbox() {
-    lightbox.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  thumb.addEventListener('click', openLightbox);
-  lightboxClose.addEventListener('click', function(e){ e.stopPropagation(); closeLightbox(); });
-  lightbox.addEventListener('click', closeLightbox);
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
-})();
 
 // ===== MIDNIGHT REFRESH =====
 function scheduleMidnightRefresh() {

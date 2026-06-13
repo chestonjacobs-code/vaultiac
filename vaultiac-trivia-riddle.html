@@ -251,8 +251,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     </div>
   </div>
   <div class="result-answer" id="resultAnswer">—</div>
-  <button class="save-cta">🔥 Save my streak — Create free account</button>
-  <span class="skip-link">No thanks, just browsing</span>
+  <button class="save-cta" id="saveStreakBtn">🔥 Sign up to save your streak</button>
+  <span class="skip-link" id="skipStreakBtn">No thanks, just browsing</span>
   <div class="result-nav">
     <button class="nav-btn nav-lb" onclick="window.location='vaultiac-leaderboard.html'">📊 View Leaderboard</button>
     <button class="nav-btn nav-home" onclick="window.location='vaultiac-trivia-select.html'">← Back to Home</button>
@@ -615,12 +615,29 @@ function showResult(won, pts) {
       `All 6 clues used. Better luck tomorrow!`;
   }
 
-  // Hide save-streak CTA if already logged in
-  const saveCta = panel.querySelector('.save-cta');
-  const skipLink = panel.querySelector('.skip-link');
-  if (getCurrentUsername() !== 'Player') {
+  // Save streak CTA — guests only
+  const saveCta = document.getElementById('saveStreakBtn');
+  const skipLink = document.getElementById('skipStreakBtn');
+  const currentUser = getCurrentUsername();
+  if (currentUser && currentUser !== 'Player') {
     if (saveCta) saveCta.style.display = 'none';
     if (skipLink) skipLink.style.display = 'none';
+  } else {
+    if (saveCta) {
+      saveCta.style.display = 'block';
+      saveCta.onclick = function() {
+        if (typeof window.vaultiacOpenAuth === 'function') {
+          window.vaultiacOpenAuth('signup');
+        }
+      };
+    }
+    if (skipLink) {
+      skipLink.style.display = 'block';
+      skipLink.onclick = function() {
+        skipLink.style.display = 'none';
+        if (saveCta) saveCta.style.display = 'none';
+      };
+    }
   }
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }

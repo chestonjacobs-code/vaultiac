@@ -128,6 +128,35 @@ async function initSchema() {
       ALTER TABLE friendships DROP CONSTRAINT IF EXISTS friendships_user_a_id_fkey;
       ALTER TABLE friendships DROP CONSTRAINT IF EXISTS friendships_user_b_id_fkey;
     `);
+    // Friend requests table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS friend_requests (
+        id SERIAL PRIMARY KEY,
+        from_user_id INTEGER NOT NULL,
+        to_user_id INTEGER NOT NULL,
+        invite_token TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(from_user_id, to_user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_friend_requests_to ON friend_requests(to_user_id);
+      CREATE INDEX IF NOT EXISTS idx_friend_requests_token ON friend_requests(invite_token);
+    `);
+    // Weekly recaps table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS weekly_recaps (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        week_start TEXT NOT NULL,
+        rank INTEGER,
+        total_friends INTEGER,
+        message TEXT,
+        dismissed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(user_id, week_start)
+      );
+      CREATE INDEX IF NOT EXISTS idx_weekly_recaps_user ON weekly_recaps(user_id);
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

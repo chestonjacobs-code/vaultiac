@@ -170,6 +170,34 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .ac-today{border:1px solid var(--gold);color:var(--gold);background:rgba(232,194,122,.1);}
 
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* FRIEND REQUEST BANNER */
+.fr-banner{width:100%;max-width:480px;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+  background:linear-gradient(155deg,#1a1628,#0d0b12);border:1px solid rgba(167,139,250,.35);
+  position:relative;z-index:2;display:none;}
+.fr-banner.show{display:block;animation:rise .4s ease forwards;}
+.fr-head{font-size:13px;font-weight:700;margin-bottom:4px;}
+.fr-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.fr-actions{display:flex;gap:8px;}
+.fr-accept{flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:10px;
+  padding:10px;cursor:pointer;transition:.2s;}
+.fr-accept:hover{opacity:.9;}
+.fr-decline{flex:1;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;
+  padding:10px;cursor:pointer;transition:.2s;}
+.fr-decline:hover{color:var(--paper);border-color:rgba(255,255,255,.2);}
+
+/* WEEKLY RECAP BANNER */
+.recap-banner{width:100%;max-width:480px;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+  background:radial-gradient(120% 55% at 0% 50%,rgba(232,194,122,.14),transparent 60%),linear-gradient(155deg,#1a1628,#0d0b12);
+  border:1px solid rgba(232,194,122,.3);position:relative;z-index:2;display:none;}
+.recap-banner.show{display:block;animation:rise .4s ease forwards;}
+.recap-banner-head{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
+.recap-banner-msg{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:12px;}
+.recap-dismiss{font-family:inherit;font-size:12px;font-weight:700;color:var(--muted);
+  background:none;border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;transition:.2s;}
+.recap-dismiss:hover{color:var(--paper);border-color:rgba(255,255,255,.2);}
 </style>
 </head>
 <body>
@@ -218,6 +246,23 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   <button class="tab-btn active" id="tabGlobal" onclick="switchMain('global')">&#127758; Global</button>
   <button class="tab-btn" id="tabFriends" onclick="switchMain('friends')">&#128101; Friends</button>
   <button class="tab-btn" id="tabPersonal" onclick="switchMain('personal')">&#9889; Personal</button>
+</div>
+
+<!-- FRIEND REQUEST BANNER -->
+<div class="fr-banner" id="frBanner">
+  <div class="fr-head" id="frBannerHead">Friend request</div>
+  <div class="fr-sub" id="frBannerSub">wants to join your friend leaderboard.</div>
+  <div class="fr-actions">
+    <button class="fr-accept" id="frAcceptBtn">Accept</button>
+    <button class="fr-decline" id="frDeclineBtn">Decline</button>
+  </div>
+</div>
+
+<!-- WEEKLY RECAP BANNER (shown in friends tab only) -->
+<div class="recap-banner" id="recapBanner">
+  <div class="recap-banner-head">&#128197; Weekly Recap</div>
+  <div class="recap-banner-msg" id="recapBannerMsg"></div>
+  <button class="recap-dismiss" id="recapDismissBtn">Got it</button>
 </div>
 
 <!-- CATEGORY FILTER (hidden on personal) -->
@@ -517,7 +562,10 @@ function switchMain(tab) {
     : 'Updated daily · Pokemon trivia';
 
   if (tab === 'personal') loadPersonalPanel();
-  if (tab === 'friends') loadFriendsTab();
+  if (tab === 'friends') {
+    loadFriendsTab();
+    loadWeeklyRecap();
+  }
 }
 
 async function loadFriendsTab() {
@@ -719,6 +767,9 @@ document.querySelectorAll('.cf-btn').forEach(btn=>{
   });
 });
 
+// State for pending friend request
+let pendingFriendRequest = null;
+
 // Handle ?invite=TOKEN on page load
 (async function handleInviteParam() {
   const params = new URLSearchParams(window.location.search);
@@ -734,27 +785,138 @@ document.querySelectorAll('.cf-btn').forEach(btn=>{
   const user = await VaultAuth.getUser();
 
   if (!user) {
+    // Not logged in — store token, open auth modal
     sessionStorage.setItem('pending_invite', inviteToken);
     sessionStorage.setItem('auth_open_tab', 'signup');
-    // Show message via a quick toast then redirect
-    showToast('Create a free account to join your friend\'s leaderboard.');
+    showToast('Sign in or create a free account to join your friend\'s leaderboard.');
     return;
   }
 
+  // Logged in — create a pending friend request (not auto-accept)
+  await processPendingInvite(inviteToken);
+})();
+
+async function processPendingInvite(token) {
   try {
-    const res = await fetch('/api/friends/join/' + encodeURIComponent(inviteToken), {
-      headers: { 'Authorization': 'Bearer ' + VaultAuth.getToken() }
+    const res = await fetch('/api/friends/request/' + encodeURIComponent(token), {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + VaultAuth.getToken(), 'Content-Type': 'application/json' }
     });
     const json = await res.json();
-    if (res.ok) {
-      showToast('Friend added! You\'re now connected.');
+
+    if (json.status === 'already_friends') {
+      showToast('You\'re already friends with this person.');
+      return;
+    }
+
+    if (res.ok && json.status === 'pending') {
+      // Show confirmation banner
+      pendingFriendRequest = json;
+      showFriendRequestBanner(json.from_username, null);
     } else {
-      showToast(json.error || 'Could not join invite.');
+      showToast(json.error || 'Could not process invite.');
     }
   } catch (e) {
     showToast('Could not process invite link.');
   }
+}
+
+function showFriendRequestBanner(fromUsername, requestId) {
+  const banner = document.getElementById('frBanner');
+  document.getElementById('frBannerHead').textContent = '@' + fromUsername + ' wants to be friends';
+  document.getElementById('frBannerSub').textContent = 'Accept to compete on a private leaderboard together.';
+  banner.classList.add('show');
+
+  document.getElementById('frAcceptBtn').onclick = () => respondToRequest('accept', fromUsername, requestId);
+  document.getElementById('frDeclineBtn').onclick = () => respondToRequest('decline', fromUsername, requestId);
+}
+
+async function respondToRequest(action, fromUsername, requestId) {
+  const banner = document.getElementById('frBanner');
+
+  // Get the request id from pending list if not passed
+  let rid = requestId;
+  if (!rid && pendingFriendRequest) {
+    const token = VaultAuth.getToken();
+    const res = await fetch('/api/friends/pending', { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+    const match = (json.data || []).find(r => r.from_username === fromUsername);
+    rid = match ? match.id : null;
+  }
+
+  if (!rid) {
+    banner.classList.remove('show');
+    showToast(action === 'accept' ? 'Friend added!' : 'Request declined.');
+    return;
+  }
+
+  try {
+    const token = VaultAuth.getToken();
+    const res = await fetch('/api/friends/respond', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: rid, action })
+    });
+    const json = await res.json();
+    banner.classList.remove('show');
+    if (action === 'accept') {
+      showToast('@' + fromUsername + ' added to your friend leaderboard!');
+      // Switch to friends tab so they see the new list
+      switchMain('friends');
+    } else {
+      showToast('Request declined.');
+    }
+  } catch (e) {
+    banner.classList.remove('show');
+    showToast('Something went wrong. Try again.');
+  }
+}
+
+// Check for pending invite stored from pre-auth redirect
+(async function checkStoredInvite() {
+  const storedToken = sessionStorage.getItem('pending_invite');
+  if (!storedToken) return;
+  const user = await VaultAuth.getUser();
+  if (!user) return;
+  sessionStorage.removeItem('pending_invite');
+  await processPendingInvite(storedToken);
 })();
+
+// Check for pending friend requests on load (for users who got a request while logged in on another device)
+async function checkPendingRequests() {
+  const token = VaultAuth.getToken();
+  if (!token) return;
+  try {
+    const res = await fetch('/api/friends/pending', { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+    const pending = json.data || [];
+    if (pending.length > 0) {
+      const first = pending[0];
+      showFriendRequestBanner(first.from_username, first.id);
+    }
+  } catch (e) { /* silent */ }
+}
+
+// Weekly recap banner
+async function loadWeeklyRecap() {
+  const token = VaultAuth.getToken();
+  if (!token) return;
+  try {
+    const res = await fetch('/api/friends/recap', { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+    if (!json.data) return;
+    const banner = document.getElementById('recapBanner');
+    document.getElementById('recapBannerMsg').textContent = json.data.message;
+    banner.classList.add('show');
+    document.getElementById('recapDismissBtn').onclick = async () => {
+      banner.classList.remove('show');
+      await fetch('/api/friends/recap/dismiss', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+    };
+  } catch (e) { /* silent */ }
+}
 
 function showToast(msg) {
   let t = document.getElementById('vaultToast');
@@ -771,6 +933,7 @@ function showToast(msg) {
 }
 
 window.addEventListener('load', loadLeaderboard);
+window.addEventListener('load', checkPendingRequests);
 
 // Suggestion panel
 const sPanel=document.getElementById('suggestPanel');

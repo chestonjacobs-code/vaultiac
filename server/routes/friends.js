@@ -26,33 +26,106 @@ router.post('/invite', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/friends/join/:token — accept an invite link
-router.get('/join/:token', requireAuth, async (req, res) => {
+// GET /api/friends/invite-info/:token — return inviter username (no auth required)
+router.get('/invite-info/:token', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT u.username FROM friend_invites fi JOIN users u ON u.id = fi.inviter_id WHERE fi.token = $1',
+      [req.params.token]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Invite not found.' });
+    return res.json({ username: rows[0].username });
+  } catch (e) {
+    console.error('[friends] invite-info error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/friends/request/:token — create a pending friend request (replaces auto-join)
+router.post('/request/:token', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT inviter_id FROM friend_invites WHERE token = $1',
       [req.params.token]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Invite link not found.' });
-    const inviterId = rows[0].inviter_id;
-    if (inviterId === req.user.id) return res.status(400).json({ error: 'You cannot join your own invite.' });
+    const fromId = rows[0].inviter_id;
+    if (fromId === req.user.id) return res.status(400).json({ error: 'You cannot add yourself.' });
 
-    const a = Math.min(inviterId, req.user.id);
-    const b = Math.max(inviterId, req.user.id);
-
-    const check = await pool.query(
-      'SELECT id FROM friendships WHERE user_a_id = $1 AND user_b_id = $2',
-      [a, b]
+    // Check already friends
+    const a = Math.min(fromId, req.user.id);
+    const b = Math.max(fromId, req.user.id);
+    const alreadyFriends = await pool.query(
+      'SELECT id FROM friendships WHERE user_a_id = $1 AND user_b_id = $2', [a, b]
     );
-    if (check.rows.length === 0) {
+    if (alreadyFriends.rows.length > 0) return res.json({ status: 'already_friends' });
+
+    // Upsert pending request
+    await pool.query(
+      `INSERT INTO friend_requests (from_user_id, to_user_id, invite_token, status)
+       VALUES ($1, $2, $3, 'pending')
+       ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET status = 'pending', created_at = NOW()`,
+      [fromId, req.user.id, req.params.token]
+    );
+
+    // Get inviter username for response
+    const uRes = await pool.query('SELECT username FROM users WHERE id = $1', [fromId]);
+    return res.json({ status: 'pending', from_username: uRes.rows[0]?.username });
+  } catch (e) {
+    console.error('[friends] request error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/friends/pending — return pending requests for current user
+router.get('/pending', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT fr.id, fr.from_user_id, u.username as from_username, fr.invite_token, fr.created_at
+       FROM friend_requests fr
+       JOIN users u ON u.id = fr.from_user_id
+       WHERE fr.to_user_id = $1 AND fr.status = 'pending'
+       ORDER BY fr.created_at DESC`,
+      [req.user.id]
+    );
+    return res.json({ data: rows });
+  } catch (e) {
+    console.error('[friends] pending error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/friends/respond — accept or decline a friend request
+router.post('/respond', requireAuth, async (req, res) => {
+  const { request_id, action } = req.body; // action: 'accept' | 'decline'
+  if (!request_id || !['accept', 'decline'].includes(action)) {
+    return res.status(400).json({ error: 'Invalid request.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM friend_requests WHERE id = $1 AND to_user_id = $2 AND status = $3',
+      [request_id, req.user.id, 'pending']
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Request not found.' });
+    const fr = rows[0];
+
+    if (action === 'accept') {
+      const a = Math.min(fr.from_user_id, req.user.id);
+      const b = Math.max(fr.from_user_id, req.user.id);
       await pool.query(
-        'INSERT INTO friendships (user_a_id, user_b_id) VALUES ($1, $2)',
+        'INSERT INTO friendships (user_a_id, user_b_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [a, b]
       );
     }
-    return res.json({ success: true, message: 'Friend added!' });
+
+    await pool.query(
+      'UPDATE friend_requests SET status = $1 WHERE id = $2',
+      [action === 'accept' ? 'accepted' : 'declined', fr.id]
+    );
+
+    return res.json({ success: true, action });
   } catch (e) {
-    console.error('[friends] join error:', e.message);
+    console.error('[friends] respond error:', e.message);
     return res.status(500).json({ error: 'Server error' });
   }
 });
@@ -96,6 +169,34 @@ router.get('/list', requireAuth, async (req, res) => {
     return res.json({ data: rows });
   } catch (e) {
     console.error('[friends] list error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/friends/recap — return undismissed weekly recap for current user
+router.get('/recap', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM weekly_recaps WHERE user_id = $1 AND dismissed = FALSE ORDER BY created_at DESC LIMIT 1',
+      [req.user.id]
+    );
+    return res.json({ data: rows[0] || null });
+  } catch (e) {
+    console.error('[friends] recap error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/friends/recap/dismiss — mark recap as dismissed
+router.post('/recap/dismiss', requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE weekly_recaps SET dismissed = TRUE WHERE user_id = $1 AND dismissed = FALSE',
+      [req.user.id]
+    );
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[friends] recap dismiss error:', e.message);
     return res.status(500).json({ error: 'Server error' });
   }
 });

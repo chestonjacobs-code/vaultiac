@@ -30,9 +30,28 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../vaultiac-home.html'));
 });
 
+const { generateWeeklyRecaps } = require('./jobs/weekly-recap');
+
+// Weekly recap — runs every Sunday at midnight Eastern
+function scheduleWeeklyRecap() {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = now.getDay(); // 0 = Sunday
+  const daysUntilSunday = day === 0 ? 7 : 7 - day;
+  const nextSunday = new Date(now);
+  nextSunday.setDate(now.getDate() + daysUntilSunday);
+  nextSunday.setHours(0, 0, 5, 0);
+  const msUntil = nextSunday - now;
+  console.log('[weekly-recap] Next run in', Math.round(msUntil / 3600000), 'hours');
+  setTimeout(async () => {
+    await generateWeeklyRecaps();
+    scheduleWeeklyRecap();
+  }, msUntil);
+}
+
 app.listen(PORT, () => {
   console.log(`Vaultiac server running at http://localhost:${PORT}`);
   scheduleJob();
+  scheduleWeeklyRecap();
 
   // Seed market data on first deploy if table is empty
   const { runScrapeJob } = require('./jobs/newsletter-scrape');

@@ -204,7 +204,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <div class="topbar">
   <button class="back-btn" onclick="window.history.back()">‹ Trivia</button>
   <div class="topbar-brand">VAULTIAC</div>
-  <div class="streak-pill">🔥 3</div>
+  <div class="streak-pill" id="streakPill">🔥 --</div>
 </div>
 
 <!-- DATE -->
@@ -378,7 +378,24 @@ document.getElementById('todayDate').textContent =
 setTimeout(()=>{ document.getElementById('vault').style.display='none'; }, 3300);
 
 // ===== INIT — deferred so api.js is loaded first =====
-window.addEventListener('load', loadDailyTrivia);
+window.addEventListener('load', async function() {
+  loadDailyTrivia();
+
+  // Load real streak for logged-in users
+  const currentUser = getCurrentUsername();
+  if (currentUser && currentUser !== 'Player') {
+    try {
+      const res = await fetch(`/api/leaderboard/user/${encodeURIComponent(currentUser)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const streak = data.data?.current_streak ?? '--';
+        document.getElementById('streakPill').textContent = '🔥 ' + streak;
+      }
+    } catch(e) {
+      // Silent — pill stays at '--'
+    }
+  }
+});
 
 function revealNextClue() {
   if (currentClue >= PUZZLE.clues.length) return;

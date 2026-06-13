@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bg1" cx="50%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#1e2430"/>
+      <stop offset="100%" stop-color="#06050c"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8c27a" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#e8c27a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ring-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8c27a" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#e8c27a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="title-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e8e0d0"/>
+      <stop offset="30%" stop-color="#e8c27a"/>
+      <stop offset="55%" stop-color="#ffffff"/>
+      <stop offset="80%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#f0a6c8"/>
+    </linearGradient>
+    <linearGradient id="tag-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9a93a6"/>
+      <stop offset="100%" stop-color="#9a93a6"/>
+    </linearGradient>
+    <filter id="glow-filter">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg1)"/>
+
+  <!-- Steel brushing lines -->
+  <rect width="1200" height="630" fill="none"
+    style="background:repeating-linear-gradient(180deg,transparent 0px,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px)"/>
+
+  <!-- Subtle horizontal lines for brushed steel effect -->
+  <g opacity="0.04">
+    <line x1="0" y1="60" x2="1200" y2="60" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="120" x2="1200" y2="120" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="180" x2="1200" y2="180" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="240" x2="1200" y2="240" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="300" x2="1200" y2="300" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="360" x2="1200" y2="360" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="420" x2="1200" y2="420" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="480" x2="1200" y2="480" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="540" x2="1200" y2="540" stroke="white" stroke-width="1"/>
+    <line x1="0" y1="600" x2="1200" y2="600" stroke="white" stroke-width="1"/>
+  </g>
+
+  <!-- Vault ring -->
+  <circle cx="600" cy="315" r="280" fill="none" stroke="rgba(180,165,130,0.2)" stroke-width="2"/>
+  <circle cx="600" cy="315" r="280" fill="url(#ring-glow)"/>
+  <!-- Inner dashed ring -->
+  <circle cx="600" cy="315" r="259" fill="none" stroke="rgba(180,165,130,0.1)" stroke-width="1" stroke-dasharray="6 6"/>
+  <!-- Inner ring -->
+  <circle cx="600" cy="315" r="228" fill="none" stroke="rgba(180,165,130,0.1)" stroke-width="1"/>
+
+  <!-- Vault bolts (8 around ring) -->
+  <g fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1">
+    <circle cx="600" cy="35"  r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="798" cy="117" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="880" cy="315" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="798" cy="513" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="600" cy="595" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="402" cy="513" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="320" cy="315" r="5" fill="rgba(90,96,112,0.8)"/>
+    <circle cx="402" cy="117" r="5" fill="rgba(90,96,112,0.8)"/>
+  </g>
+
+  <!-- Gold glow bloom -->
+  <ellipse cx="600" cy="280" rx="320" ry="180" fill="url(#glow)"/>
+
+  <!-- Vault icon (simplified) -->
+  <g transform="translate(530, 185)">
+    <rect x="0" y="0" width="140" height="90" rx="10" fill="none" stroke="#e8c27a" stroke-width="2.5" opacity="0.5"/>
+    <rect x="14" y="14" width="52" height="46" rx="5" fill="none" stroke="#e8c27a" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="40" cy="37" r="10" fill="none" stroke="#e8c27a" stroke-width="2" opacity="0.5"/>
+    <line x1="98" y1="28" x2="98" y2="50" stroke="#e8c27a" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+    <line x1="20" y1="90" x2="20" y2="103" stroke="#e8c27a" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+    <line x1="120" y1="90" x2="120" y2="103" stroke="#e8c27a" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  </g>
+
+  <!-- VAULTIAC wordmark -->
+  <text x="600" y="350"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="128"
+    font-weight="900"
+    text-anchor="middle"
+    letter-spacing="-4"
+    fill="url(#title-grad)">VAULTIAC</text>
+
+  <!-- Tagline -->
+  <text x="600" y="410"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="28"
+    font-weight="300"
+    text-anchor="middle"
+    letter-spacing="12"
+    fill="#9a93a6"
+    text-transform="uppercase">PULL IT. TRACK IT. FLEX IT.</text>
+
+  <!-- Bottom divider line -->
+  <line x1="480" y1="448" x2="720" y2="448" stroke="rgba(232,194,122,0.25)" stroke-width="1"/>
+
+  <!-- Domain -->
+  <text x="600" y="476"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="18"
+    font-weight="400"
+    text-anchor="middle"
+    letter-spacing="4"
+    fill="rgba(154,147,166,0.6)">VAULTIAC.COM</text>
+
+  <!-- Corner rivets -->
+  <circle cx="48" cy="48"  r="3" fill="rgba(180,170,150,0.25)"/>
+  <circle cx="1152" cy="48"  r="3" fill="rgba(180,170,150,0.25)"/>
+  <circle cx="48" cy="582" r="3" fill="rgba(180,170,150,0.25)"/>
+  <circle cx="1152" cy="582" r="3" fill="rgba(180,170,150,0.25)"/>
+</svg>

@@ -51,6 +51,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:cent
   background:linear-gradient(90deg,var(--gold3),var(--gold),var(--gold2));
   border:none;border-radius:9px;padding:8px 18px;cursor:pointer;transition:.2s;font-family:inherit;text-decoration:none;}
 .nav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(232,194,122,.35);}
+@media(max-width:520px){
+  .nav-link{display:none;}
+  .nav-cta{font-size:12px;padding:7px 14px;}
+}
 
 /* ===== HERO — VAULT AESTHETIC ===== */
 .hero{

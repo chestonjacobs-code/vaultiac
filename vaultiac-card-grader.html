@@ -187,6 +187,60 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .error-sub{font-size:13px;color:var(--muted);}
 
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* BETA BANNER */
+.beta-banner{width:100%;max-width:480px;border-radius:14px;padding:14px 16px;margin-bottom:20px;
+  background:rgba(232,194,122,.07);border:1px solid rgba(232,194,122,.22);
+  position:relative;z-index:2;opacity:0;animation:rise .6s .08s ease forwards;
+  display:flex;align-items:flex-start;gap:10px;}
+.beta-icon{font-size:18px;flex:none;margin-top:1px;}
+.beta-text{font-size:12px;color:var(--muted);line-height:1.6;}
+.beta-text strong{color:var(--gold);font-weight:700;}
+
+/* TWO-ZONE UPLOAD LAYOUT */
+.upload-pair{width:100%;max-width:480px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  position:relative;z-index:2;opacity:0;animation:rise .7s .25s ease forwards;}
+.upload-zone-half{position:relative;}
+.upload-half{border-radius:16px;padding:20px 14px;text-align:center;
+  background:linear-gradient(155deg,#16121e,#0d0b12);
+  border:2px dashed rgba(167,139,250,.3);cursor:pointer;transition:.3s;min-height:160px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.upload-half:hover{border-color:rgba(167,139,250,.6);background:rgba(167,139,250,.04);}
+.upload-half.drag-over{border-color:var(--holo2);background:rgba(167,139,250,.08);}
+.upload-half.has-image{border-style:solid;border-color:rgba(167,139,250,.4);cursor:default;padding:12px;}
+.upload-half.back-side{border-color:rgba(124,232,214,.2);}
+.upload-half.back-side:hover{border-color:rgba(124,232,214,.5);background:rgba(124,232,214,.03);}
+.upload-half.back-side.has-image{border-color:rgba(124,232,214,.4);}
+.uh-label{font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;margin-bottom:2px;}
+.uh-label.front-label{color:var(--holo2);}
+.uh-label.back-label{color:var(--holo1);}
+.uh-icon{font-size:26px;opacity:.6;}
+.uh-title{font-size:13px;font-weight:700;color:var(--paper);}
+.uh-sub{font-size:11px;color:var(--muted);line-height:1.4;}
+.uh-optional{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--line);
+  padding:2px 8px;border-radius:999px;margin-top:2px;display:inline-block;}
+.uh-preview{width:100%;max-height:130px;border-radius:8px;object-fit:contain;display:block;margin-bottom:6px;}
+.uh-remove{font-size:10px;font-weight:700;color:var(--muted);background:none;border:none;
+  cursor:pointer;padding:2px 0;transition:.2s;}
+.uh-remove:hover{color:#f09090;}
+.uh-filename{font-size:10px;color:rgba(154,147,166,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+/* FEEDBACK CTA (shown after results) */
+.feedback-cta{width:100%;max-width:480px;border-radius:16px;padding:18px 20px;margin-top:12px;
+  background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid var(--line);
+  position:relative;z-index:2;display:none;}
+.feedback-cta.show{display:block;animation:rise .4s .2s ease forwards;opacity:0;}
+.fc-label{font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--holo1);font-weight:700;margin-bottom:8px;}
+.fc-title{font-family:"Fraunces",serif;font-weight:700;font-size:16px;margin-bottom:6px;}
+.fc-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+.fc-btn{font-family:inherit;font-size:13px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo1),var(--holo2));border:none;border-radius:10px;
+  padding:10px 20px;cursor:pointer;transition:.2s;width:100%;}
+.fc-btn:hover{opacity:.9;}
+
+#suggestPanel.open{transform:translateX(-50%) translateY(0)!important;}
+#suggestOverlay.open{background:rgba(0,0,0,.6)!important;pointer-events:all!important;}
 </style>
 </head>
 <body>
@@ -202,36 +256,63 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <div class="page-head">
   <div class="kick">AI-Powered</div>
   <h1>Card Grader</h1>
-  <p class="sub">Upload a photo of your card and get instant estimated grades from PSA, CGC, and TAG.</p>
+  <p class="sub">Upload front and back photos to get AI-estimated grades from PSA, CGC, and TAG.</p>
 </div>
 
-<!-- UPLOAD ZONE -->
-<div class="upload-zone">
-  <div class="upload-card" id="uploadCard">
-    <div id="uploadPrompt">
-      <div class="upload-icon">📷</div>
-      <div class="upload-title">Upload your card</div>
-      <div class="upload-sub">Take a clear photo on a flat surface with good lighting. Front of card only.</div>
-      <button class="upload-btn" id="uploadTrigger">Choose photo</button>
-    </div>
-    <div id="uploadPreview" style="display:none;">
-      <div class="preview-wrap">
-        <img class="preview-img" id="previewImg" src="" alt="Card preview"/>
-        <button class="preview-remove" id="removeBtn" title="Remove">✕</button>
+<!-- BETA BANNER -->
+<div class="beta-banner">
+  <span class="beta-icon">🧪</span>
+  <div class="beta-text"><strong>Beta feature — still learning.</strong> These are AI estimates, not official grades. Accuracy improves with clear photos and both sides uploaded. If you've had a card graded and want to help us improve, share your results using the feedback button after grading.</div>
+</div>
+
+<!-- UPLOAD PAIR — front (required) + back (optional) -->
+<div class="upload-pair">
+
+  <!-- FRONT -->
+  <div class="upload-zone-half">
+    <div class="upload-half" id="frontZone">
+      <div id="frontPrompt">
+        <div class="uh-label front-label">Front</div>
+        <div class="uh-icon">📷</div>
+        <div class="uh-title">Front of card</div>
+        <div class="uh-sub">Required</div>
       </div>
-      <div style="font-size:13px;color:var(--muted);" id="previewName"></div>
+      <div id="frontPreview" style="display:none;width:100%;text-align:center;">
+        <img class="uh-preview" id="frontImg" src="" alt="Front"/>
+        <div class="uh-filename" id="frontName"></div>
+        <button class="uh-remove" id="frontRemove">Remove</button>
+      </div>
     </div>
-    <input class="upload-input" type="file" id="fileInput" accept="image/*"/>
+    <input type="file" id="frontInput" accept="image/*" style="display:none;"/>
   </div>
+
+  <!-- BACK -->
+  <div class="upload-zone-half">
+    <div class="upload-half back-side" id="backZone">
+      <div id="backPrompt">
+        <div class="uh-label back-label">Back</div>
+        <div class="uh-icon">🔄</div>
+        <div class="uh-title">Back of card</div>
+        <div class="uh-optional">Optional</div>
+      </div>
+      <div id="backPreview" style="display:none;width:100%;text-align:center;">
+        <img class="uh-preview" id="backImg" src="" alt="Back"/>
+        <div class="uh-filename" id="backName"></div>
+        <button class="uh-remove" id="backRemove">Remove</button>
+      </div>
+    </div>
+    <input type="file" id="backInput" accept="image/*" style="display:none;"/>
+  </div>
+
 </div>
 
 <!-- TIPS -->
-<div class="tips">
+<div class="tips" style="opacity:0;animation:rise .6s .3s ease forwards;">
   <div class="tips-row">
     <div class="tip">💡 Flat surface</div>
     <div class="tip">💡 Good lighting</div>
-    <div class="tip">💡 Front only</div>
     <div class="tip">💡 Fill the frame</div>
+    <div class="tip">💡 Both sides = better estimate</div>
   </div>
 </div>
 
@@ -333,6 +414,14 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   <button class="try-again-btn" id="tryAgainBtn">Grade another card</button>
 </div>
 
+<!-- FEEDBACK CTA -->
+<div class="feedback-cta" id="feedbackCta">
+  <div class="fc-label">Help us improve</div>
+  <div class="fc-title">Got this card graded?</div>
+  <div class="fc-sub">If you submitted this card and got your official grade back, we'd love to know how close we were. Your feedback helps make the grader better for everyone.</div>
+  <button class="fc-btn" id="feedbackBtn">Share my results</button>
+</div>
+
 <!-- SUGGESTION FOOTER -->
 <div style="width:100%;max-width:480px;margin-top:28px;position:relative;z-index:2;">
   <button id="suggestTrigger" style="width:100%;display:flex;align-items:center;gap:10px;font-family:inherit;font-size:13px;font-weight:600;color:#9a93a6;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);padding:13px 16px;border-radius:14px;cursor:pointer;transition:.2s;">
@@ -340,6 +429,24 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <span style="flex:1;text-align:left;">Got an idea? Tell us</span>
     <span style="color:var(--gold);font-size:16px;">›</span>
   </button>
+</div>
+<div id="suggestOverlay" style="position:fixed;inset:0;z-index:40;background:rgba(0,0,0,0);pointer-events:none;transition:background .3s;"></div>
+<div id="suggestPanel" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(102%);z-index:50;width:min(480px,100vw);background:#16121e;border-radius:24px 24px 0 0;border:1px solid rgba(255,255,255,.1);border-bottom:none;padding:12px 0 44px;transition:transform .42s cubic-bezier(.32,1,.46,1);">
+  <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);margin:0 auto 16px;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:0 24px;margin-bottom:16px;">
+    <div>
+      <div style="font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px;">Feedback</div>
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:22px;color:var(--paper);">Got an idea?</div>
+    </div>
+    <button onclick="document.getElementById('suggestPanel').classList.remove('open');document.getElementById('suggestOverlay').classList.remove('open');" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+  </div>
+  <div style="padding:0 24px;">
+    <div style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:16px;">Quick suggestions or grader accuracy feedback go straight to the team.</div>
+    <textarea id="suggestInput" placeholder="e.g. My PSA came back as 9, grader said 8..." maxlength="400" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--paper);font-family:inherit;font-size:14px;border-radius:14px;padding:14px 16px;resize:none;height:100px;outline:none;line-height:1.5;"></textarea>
+    <div style="font-size:11px;color:var(--muted);text-align:right;margin:6px 0 14px;"><span id="charCount">0</span>/400</div>
+    <button id="suggestSubmit" style="width:100%;font-family:inherit;font-size:14px;font-weight:700;color:#0c0a10;background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:12px;padding:13px;cursor:pointer;">Send</button>
+    <div id="suggestSent" style="display:none;text-align:center;font-size:13px;font-weight:600;color:var(--holo1);padding:12px;margin-top:4px;">Thanks — got it.</div>
+  </div>
 </div>
 
 <script>
@@ -357,83 +464,111 @@ function initAuthState() {
   document.getElementById('guestGate').style.display = isLoggedIn ? 'none' : 'block';
 }
 
-// ===== FILE UPLOAD =====
-let selectedFile = null;
-let selectedDataURL = null;
-
-const fileInput = document.getElementById('fileInput');
-const uploadCard = document.getElementById('uploadCard');
-const uploadPrompt = document.getElementById('uploadPrompt');
-const uploadPreview = document.getElementById('uploadPreview');
-const previewImg = document.getElementById('previewImg');
-const previewName = document.getElementById('previewName');
+// ===== UPLOAD STATE =====
+let frontDataURL = null;
+let backDataURL = null;
 const analyzeBtn = document.getElementById('analyzeBtn');
 
-document.getElementById('uploadTrigger').addEventListener('click', function(e) {
-  e.stopPropagation();
-  fileInput.click();
+function updateAnalyzeBtn() {
+  analyzeBtn.disabled = !frontDataURL;
+}
+
+// ===== FRONT UPLOAD =====
+const frontZone = document.getElementById('frontZone');
+const frontInput = document.getElementById('frontInput');
+
+frontZone.addEventListener('click', function() {
+  if (!frontDataURL) frontInput.click();
+});
+frontZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+frontZone.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+frontZone.addEventListener('drop', function(e) {
+  e.preventDefault(); this.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFront(e.dataTransfer.files[0]);
+});
+frontInput.addEventListener('change', function() {
+  if (this.files[0]) handleFront(this.files[0]);
+});
+document.getElementById('frontRemove').addEventListener('click', function(e) {
+  e.stopPropagation(); clearFront();
 });
 
-uploadCard.addEventListener('click', function() {
-  if (!selectedFile) fileInput.click();
-});
-
-fileInput.addEventListener('change', function() {
-  if (this.files && this.files[0]) handleFile(this.files[0]);
-});
-
-// Drag and drop
-uploadCard.addEventListener('dragover', function(e) {
-  e.preventDefault();
-  this.classList.add('drag-over');
-});
-uploadCard.addEventListener('dragleave', function() {
-  this.classList.remove('drag-over');
-});
-uploadCard.addEventListener('drop', function(e) {
-  e.preventDefault();
-  this.classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
-
-function handleFile(file) {
+function handleFront(file) {
   if (!file.type.startsWith('image/')) return;
-  selectedFile = file;
   const reader = new FileReader();
   reader.onload = function(e) {
-    selectedDataURL = e.target.result;
-    previewImg.src = selectedDataURL;
-    previewName.textContent = file.name;
-    uploadPrompt.style.display = 'none';
-    uploadPreview.style.display = 'block';
-    uploadCard.classList.add('has-image');
-    analyzeBtn.disabled = false;
+    frontDataURL = e.target.result;
+    document.getElementById('frontImg').src = frontDataURL;
+    document.getElementById('frontName').textContent = file.name;
+    document.getElementById('frontPrompt').style.display = 'none';
+    document.getElementById('frontPreview').style.display = 'block';
+    frontZone.classList.add('has-image');
+    updateAnalyzeBtn();
     hideResults();
   };
   reader.readAsDataURL(file);
 }
 
-document.getElementById('removeBtn').addEventListener('click', function(e) {
-  e.stopPropagation();
-  resetUpload();
-});
-
-document.getElementById('tryAgainBtn').addEventListener('click', function() {
-  resetUpload();
-  hideResults();
-});
-
-function resetUpload() {
-  selectedFile = null;
-  selectedDataURL = null;
-  fileInput.value = '';
-  previewImg.src = '';
-  previewName.textContent = '';
-  uploadPrompt.style.display = 'block';
-  uploadPreview.style.display = 'none';
-  uploadCard.classList.remove('has-image');
-  analyzeBtn.disabled = true;
+function clearFront() {
+  frontDataURL = null;
+  frontInput.value = '';
+  document.getElementById('frontImg').src = '';
+  document.getElementById('frontName').textContent = '';
+  document.getElementById('frontPrompt').style.display = 'block';
+  document.getElementById('frontPreview').style.display = 'none';
+  frontZone.classList.remove('has-image');
+  updateAnalyzeBtn();
 }
+
+// ===== BACK UPLOAD =====
+const backZone = document.getElementById('backZone');
+const backInput = document.getElementById('backInput');
+
+backZone.addEventListener('click', function() {
+  if (!backDataURL) backInput.click();
+});
+backZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+backZone.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+backZone.addEventListener('drop', function(e) {
+  e.preventDefault(); this.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleBack(e.dataTransfer.files[0]);
+});
+backInput.addEventListener('change', function() {
+  if (this.files[0]) handleBack(this.files[0]);
+});
+document.getElementById('backRemove').addEventListener('click', function(e) {
+  e.stopPropagation(); clearBack();
+});
+
+function handleBack(file) {
+  if (!file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    backDataURL = e.target.result;
+    document.getElementById('backImg').src = backDataURL;
+    document.getElementById('backName').textContent = file.name;
+    document.getElementById('backPrompt').style.display = 'none';
+    document.getElementById('backPreview').style.display = 'block';
+    backZone.classList.add('has-image');
+    hideResults();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBack() {
+  backDataURL = null;
+  backInput.value = '';
+  document.getElementById('backImg').src = '';
+  document.getElementById('backName').textContent = '';
+  document.getElementById('backPrompt').style.display = 'block';
+  document.getElementById('backPreview').style.display = 'none';
+  backZone.classList.remove('has-image');
+}
+
+// ===== RESET =====
+document.getElementById('tryAgainBtn').addEventListener('click', function() {
+  clearFront(); clearBack(); hideResults();
+});
 
 function hideResults() {
   document.getElementById('resultsPanel').classList.remove('show');
@@ -441,41 +576,41 @@ function hideResults() {
   document.getElementById('errorState').classList.remove('show');
   document.getElementById('errorState').style.display = 'none';
   document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('feedbackCta').classList.remove('show');
+  document.getElementById('feedbackCta').style.display = 'none';
 }
 
-// ===== GRADE ANALYSIS =====
+// ===== ANALYZE =====
 analyzeBtn.addEventListener('click', async function() {
-  if (!selectedDataURL) return;
+  if (!frontDataURL) return;
   const token = localStorage.getItem('vaultiac_token');
-  if (!token) {
-    window.vaultiacOpenAuth('signup');
-    return;
-  }
+  if (!token) { window.vaultiacOpenAuth('signup'); return; }
 
   this.disabled = true;
   document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('loadingState').classList.add('show');
   document.getElementById('resultsPanel').classList.remove('show');
   document.getElementById('resultsPanel').style.display = 'none';
   document.getElementById('errorState').classList.remove('show');
   document.getElementById('errorState').style.display = 'none';
+  document.getElementById('feedbackCta').classList.remove('show');
+  document.getElementById('feedbackCta').style.display = 'none';
 
   try {
+    const body = { front_image: frontDataURL };
+    if (backDataURL) body.back_image = backDataURL;
+
     const res = await fetch('/api/grader/analyze', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ image: selectedDataURL })
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
 
     const json = await res.json();
-
-    if (!res.ok || json.error) {
-      throw new Error(json.error || 'Analysis failed');
-    }
-
     document.getElementById('loadingState').style.display = 'none';
+
+    if (!res.ok || json.error) throw new Error(json.error || 'Analysis failed');
+
     renderResults(json);
   } catch(e) {
     document.getElementById('loadingState').style.display = 'none';
@@ -486,38 +621,23 @@ analyzeBtn.addEventListener('click', async function() {
   }
 });
 
+// ===== GRADE HELPERS =====
 function gradeClass(grade) {
   const n = parseFloat(grade);
   if (n >= 8.5) return 'grade-high';
   if (n >= 6) return 'grade-mid';
   return 'grade-low';
 }
-
 function barClass(score) {
   if (score >= 8.5) return 'bar-high';
   if (score >= 6) return 'bar-mid';
   return 'bar-low';
 }
+const PSA_LABELS = {10:'Gem Mint',9:'Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good-Excellent',3:'Very Good',2:'Good',1:'Poor'};
+const CGC_LABELS = {10:'Pristine',9.5:'Gem Mint',9:'Mint',8.5:'Near Mint-Mint',8:'Near Mint-Mint',7.5:'Near Mint',7:'Near Mint',6.5:'Excellent-Mint',6:'Excellent-Mint',5.5:'Excellent',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
+const TAG_LABELS = {10:'Perfect',9:'Gem Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
 
-const PSA_LABELS = {
-  10: 'Gem Mint', 9: 'Mint', 8: 'Near Mint-Mint', 7: 'Near Mint',
-  6: 'Excellent-Mint', 5: 'Excellent', 4: 'Very Good-Excellent',
-  3: 'Very Good', 2: 'Good', 1: 'Poor'
-};
-
-const CGC_LABELS = {
-  10: 'Pristine', 9.5: 'Gem Mint', 9: 'Mint', 8.5: 'Near Mint-Mint',
-  8: 'Near Mint-Mint', 7.5: 'Near Mint', 7: 'Near Mint',
-  6.5: 'Excellent-Mint', 6: 'Excellent-Mint', 5.5: 'Excellent',
-  5: 'Excellent', 4: 'Very Good', 3: 'Good', 2: 'Fair', 1: 'Poor'
-};
-
-const TAG_LABELS = {
-  10: 'Perfect', 9: 'Gem Mint', 8: 'Near Mint-Mint', 7: 'Near Mint',
-  6: 'Excellent-Mint', 5: 'Excellent', 4: 'Very Good',
-  3: 'Good', 2: 'Fair', 1: 'Poor'
-};
-
+// ===== RENDER RESULTS =====
 function renderResults(data) {
   document.getElementById('resultsCardName').textContent = data.card_name || 'Your Card';
 
@@ -539,11 +659,10 @@ function renderResults(data) {
   const attrs = data.attributes || {};
   ['centering','corners','edges','surface'].forEach(attr => {
     const score = attrs[attr] || 0;
-    const pct = (score / 10) * 100;
     const cap = attr.charAt(0).toUpperCase() + attr.slice(1);
     const bar = document.getElementById('bar' + cap);
     const scoreEl = document.getElementById('score' + cap);
-    if (bar) { bar.style.width = pct + '%'; bar.className = 'attr-bar ' + barClass(score); }
+    if (bar) { bar.style.width = (score / 10 * 100) + '%'; bar.className = 'attr-bar ' + barClass(score); }
     if (scoreEl) scoreEl.textContent = score.toFixed(1);
   });
 
@@ -555,8 +674,62 @@ function renderResults(data) {
   panel.classList.add('show');
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-  document.getElementById('analyzeBtn').disabled = false;
+  const cta = document.getElementById('feedbackCta');
+  cta.style.display = 'block';
+  setTimeout(() => cta.classList.add('show'), 300);
+
+  analyzeBtn.disabled = false;
 }
+
+// ===== FEEDBACK BUTTON =====
+document.getElementById('feedbackBtn').addEventListener('click', function() {
+  const cardName = document.getElementById('resultsCardName').textContent;
+  const psa = document.getElementById('gradePSA').textContent;
+  const cgc = document.getElementById('gradeCGC').textContent;
+  const tag = document.getElementById('gradeTAG').textContent;
+  const msg = 'Grader feedback for ' + cardName + ' — AI estimated PSA ' + psa + ' / CGC ' + cgc + ' / TAG ' + tag + '. Actual grade: [please fill in]. How close was it?';
+  const input = document.getElementById('suggestInput');
+  if (input) {
+    input.value = msg;
+    document.getElementById('charCount').textContent = msg.length;
+    document.getElementById('suggestPanel').classList.add('open');
+    document.getElementById('suggestOverlay').classList.add('open');
+  } else {
+    window.location.href = 'vaultiac-contact.html';
+  }
+});
+
+// ===== SUGGESTION PANEL =====
+document.getElementById('suggestTrigger').addEventListener('click', function() {
+  document.getElementById('suggestPanel').classList.add('open');
+  document.getElementById('suggestOverlay').classList.add('open');
+});
+document.getElementById('suggestOverlay').addEventListener('click', function() {
+  document.getElementById('suggestPanel').classList.remove('open');
+  this.classList.remove('open');
+});
+document.getElementById('suggestInput').addEventListener('input', function() {
+  document.getElementById('charCount').textContent = this.value.length;
+});
+document.getElementById('suggestSubmit').addEventListener('click', async function() {
+  const val = document.getElementById('suggestInput').value.trim();
+  if (!val) return;
+  this.disabled = true; this.textContent = 'Sending...';
+  try {
+    await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Grader Feedback', email: '', type: 'Grader Feedback', message: val })
+    });
+    document.getElementById('suggestSent').style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('suggestPanel').classList.remove('open');
+      document.getElementById('suggestOverlay').classList.remove('open');
+    }, 1600);
+  } catch(e) {
+    this.disabled = false; this.textContent = 'Send';
+  }
+});
 
 // ===== INIT =====
 window.addEventListener('load', initAuthState);

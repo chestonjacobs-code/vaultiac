@@ -45,23 +45,55 @@ If you cannot analyze the image, return:
 {"error": "Brief explanation of why the image cannot be analyzed"}`;
 
 router.post('/analyze', requireAuth, async (req, res) => {
-  const { image } = req.body;
+  const { front_image, back_image, image } = req.body;
+  const frontRaw = front_image || image;
 
-  if (!image || !image.startsWith('data:image/')) {
-    return res.status(400).json({ error: 'Invalid image data.' });
+  function parseDataURL(dataUrl, label) {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+      return { error: `Invalid ${label} image data.` };
+    }
+    const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    if (!m) return { error: `Could not parse ${label} image data.` };
+    const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!supported.includes(m[1])) {
+      return { error: `Unsupported image type for ${label}. Please upload a JPEG, PNG, or WebP.` };
+    }
+    return { mediaType: m[1], base64Data: m[2] };
   }
 
-  const matches = image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-  if (!matches) {
-    return res.status(400).json({ error: 'Could not parse image data.' });
+  const front = parseDataURL(frontRaw, 'front');
+  if (front.error) return res.status(400).json({ error: front.error });
+
+  const hasBack = !!back_image;
+  let back = null;
+  if (hasBack) {
+    back = parseDataURL(back_image, 'back');
+    if (back.error) return res.status(400).json({ error: back.error });
   }
 
-  const mediaType = matches[1];
-  const base64Data = matches[2];
+  const contentBlocks = [
+    {
+      type: 'image',
+      source: { type: 'base64', media_type: front.mediaType, data: front.base64Data }
+    },
+    { type: 'text', text: 'This is the FRONT of the card.' }
+  ];
 
-  const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  if (!supported.includes(mediaType)) {
-    return res.status(400).json({ error: 'Unsupported image type. Please upload a JPEG, PNG, or WebP.' });
+  if (hasBack) {
+    contentBlocks.push({
+      type: 'image',
+      source: { type: 'base64', media_type: back.mediaType, data: back.base64Data }
+    });
+    contentBlocks.push({ type: 'text', text: 'This is the BACK of the card.' });
+    contentBlocks.push({
+      type: 'text',
+      text: 'Please analyze both sides of this trading card and provide grade estimates for PSA, CGC, and TAG. Consider defects visible on both the front and back when scoring each attribute.'
+    });
+  } else {
+    contentBlocks.push({
+      type: 'text',
+      text: 'Please analyze this trading card front and provide grade estimates for PSA, CGC, and TAG. Note that only the front image was provided, so back-surface defects cannot be assessed.'
+    });
   }
 
   try {
@@ -76,25 +108,7 @@ router.post('/analyze', requireAuth, async (req, res) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: mediaType,
-                  data: base64Data
-                }
-              },
-              {
-                type: 'text',
-                text: 'Please analyze this trading card and provide grade estimates for PSA, CGC, and TAG.'
-              }
-            ]
-          }
-        ]
+        messages: [{ role: 'user', content: contentBlocks }]
       })
     });
 

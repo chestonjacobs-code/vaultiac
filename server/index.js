@@ -26,8 +26,14 @@ app.use('/api/friends', require('./routes/friends'));
 app.use('/api/grader', require('./routes/grader'));
 app.use('/api/admin', require('./routes/admin'));
 
-// SPA fallback — serve homepage for any unmatched route
+// Fallback — serve homepage only for non-file, non-API routes
 app.get('*', (req, res) => {
+  const p = req.path;
+  // Let API routes 404 naturally
+  if (p.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
+  // If the path looks like a file (has an extension), let static middleware handle it — if we're here it wasn't found
+  if (p.includes('.')) return res.status(404).sendFile(path.join(__dirname, '../vaultiac-home.html'));
+  // No extension — treat as SPA route, serve homepage
   res.sendFile(path.join(__dirname, '../vaultiac-home.html'));
 });
 

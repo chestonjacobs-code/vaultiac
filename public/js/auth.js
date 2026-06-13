@@ -433,11 +433,23 @@ const VaultAuth = (() => {
     const token = VaultAuth.getToken();
     if (!token) return;
     try {
-      const res = await fetch('/api/friends/join/' + encodeURIComponent(inviteToken), {
-        headers: { 'Authorization': 'Bearer ' + token }
+      const res = await fetch('/api/friends/request/' + encodeURIComponent(inviteToken), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
       });
       const json = await res.json();
-      showGlobalToast(res.ok ? 'Friend added!' : (json.error || 'Could not process invite.'));
+      if (res.ok && json.status === 'pending') {
+        // Store so leaderboard page can show confirmation banner
+        sessionStorage.setItem('pending_friend_request', JSON.stringify({
+          from_username: json.from_username
+        }));
+        // Redirect to leaderboard — friends tab will pick up the banner
+        window.location.href = '/vaultiac-leaderboard.html?tab=friends';
+      } else if (json.status === 'already_friends') {
+        window.location.href = '/vaultiac-leaderboard.html?tab=friends';
+      } else {
+        showGlobalToast(json.error || 'Could not process invite.');
+      }
     } catch (e) {
       showGlobalToast('Could not process invite link.');
     }

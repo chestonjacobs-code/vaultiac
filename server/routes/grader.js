@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAuth } = require('./auth');
+const heicConvert = require('heic-convert');
 const router = express.Router();
 
 const SYSTEM_PROMPT = `You are an expert trading card grader with deep knowledge of PSA, CGC, and TAG grading standards for Pokemon TCG cards.
@@ -44,6 +45,21 @@ Respond ONLY with valid JSON in this exact format, no markdown, no extra text:
 If you cannot analyze the image, return:
 {"error": "Brief explanation of why the image cannot be analyzed"}`;
 
+async function convertHeicToJpeg(base64Data) {
+  try {
+    const inputBuffer = Buffer.from(base64Data, 'base64');
+    const outputBuffer = await heicConvert({
+      buffer: inputBuffer,
+      format: 'JPEG',
+      quality: 0.92
+    });
+    return outputBuffer.toString('base64');
+  } catch(e) {
+    console.error('[grader] HEIC conversion error:', e.message);
+    throw new Error('Could not convert iPhone photo. Please try a different image.');
+  }
+}
+
 router.post('/analyze', requireAuth, async (req, res) => {
   const { front_image, back_image, image } = req.body;
   const frontRaw = front_image || image;
@@ -65,31 +81,46 @@ router.post('/analyze', requireAuth, async (req, res) => {
     const mediaType = m[1];
     const base64Data = m[2];
 
-    // HEIC/HEIF not supported by Claude API — give clear instructions
-    if (mediaType === 'image/heic' || mediaType === 'image/heif') {
-      return { error: `iPhone HEIC photos aren't supported yet. In your iPhone Settings, go to Camera > Formats and select "Most Compatible" to shoot in JPEG, then try again.` };
-    }
+    const needsConversion = mediaType === 'image/heic' || mediaType === 'image/heif';
 
     const supported = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
-    if (!supported.includes(mediaType)) {
+    if (!needsConversion && !supported.includes(mediaType)) {
       console.error(`[grader] Unsupported media type for ${label}:`, mediaType);
       return { error: `Unsupported image format (${mediaType}). Please use JPEG, PNG, or WebP.` };
     }
 
-    // Normalize image/jpg -> image/jpeg for Anthropic API
-    const apiMediaType = mediaType === 'image/jpg' ? 'image/jpeg' : mediaType;
+    const apiMediaType = (mediaType === 'image/jpg' || needsConversion) ? 'image/jpeg' : mediaType;
 
-    return { mediaType: apiMediaType, base64Data };
+    return { mediaType: apiMediaType, base64Data, needsConversion };
   }
 
   const front = parseDataURL(frontRaw, 'front');
   if (front.error) return res.status(400).json({ error: front.error });
+
+  // Convert HEIC to JPEG if needed
+  if (front.needsConversion) {
+    try {
+      front.base64Data = await convertHeicToJpeg(front.base64Data);
+      front.mediaType = 'image/jpeg';
+    } catch(e) {
+      return res.status(400).json({ error: e.message });
+    }
+  }
 
   const hasBack = !!back_image;
   let back = null;
   if (hasBack) {
     back = parseDataURL(back_image, 'back');
     if (back.error) return res.status(400).json({ error: back.error });
+
+    if (back.needsConversion) {
+      try {
+        back.base64Data = await convertHeicToJpeg(back.base64Data);
+        back.mediaType = 'image/jpeg';
+      } catch(e) {
+        return res.status(400).json({ error: e.message });
+      }
+    }
   }
 
   const contentBlocks = [

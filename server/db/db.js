@@ -107,6 +107,18 @@ async function initSchema() {
       CREATE INDEX IF NOT EXISTS idx_friendships_a ON friendships(user_a_id);
       CREATE INDEX IF NOT EXISTS idx_friendships_b ON friendships(user_b_id);
     `);
+    // Password resets table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
+    `);
     // Drop FK constraint on friend_invites.inviter_id — users table may be empty in production
     await client.query(`
       ALTER TABLE friend_invites DROP CONSTRAINT IF EXISTS friend_invites_inviter_id_fkey;

@@ -355,10 +355,12 @@ const VaultAuth = (() => {
         <input class="va-input" id="vaLoginPassword" type="password" placeholder="Password" autocomplete="current-password"/>
         <div class="va-error" id="vaLoginError"></div>
         <button class="va-submit" id="vaLoginSubmit">Log In</button>
+        <div style="text-align:center;margin-top:12px;"><button id="vaForgotBtn" style="background:none;border:none;color:#9a93a6;font-size:12px;font-family:inherit;cursor:pointer;text-decoration:underline;">Forgot password?</button></div>
         <div class="va-switch">Don't have an account? <button id="vaSwitchSignup">Sign up free</button></div>
       </div>
     `;
     document.getElementById('vaSwitchSignup').addEventListener('click', () => renderAuth('signup'));
+    document.getElementById('vaForgotBtn').addEventListener('click', () => renderForgotForm());
     document.getElementById('vaLoginSubmit').addEventListener('click', async () => {
       const email = document.getElementById('vaLoginEmail').value.trim();
       const password = document.getElementById('vaLoginPassword').value;
@@ -380,6 +382,46 @@ const VaultAuth = (() => {
     // Allow Enter key on password field
     document.getElementById('vaLoginPassword').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('vaLoginSubmit').click();
+    });
+  }
+
+  function renderForgotForm() {
+    document.getElementById('vaFormWrap').innerHTML = `
+      <div class="va-form" id="vaForgotForm">
+        <p class="va-switch" style="margin-bottom:8px;">Enter your email and we'll send a reset link.</p>
+        <input class="va-input" id="vaForgotEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
+        <button class="va-submit" id="vaForgotSubmitBtn">Send Reset Link</button>
+        <div class="va-error" id="vaForgotMsg" style="color:#9a93a6;"></div>
+        <div style="text-align:center;margin-top:14px;"><button id="vaBackToLoginBtn" style="background:none;border:none;color:#9a93a6;font-size:12px;font-family:inherit;cursor:pointer;text-decoration:underline;">Back to log in</button></div>
+      </div>
+    `;
+    document.getElementById('vaBackToLoginBtn').addEventListener('click', () => renderAuth('login'));
+    document.getElementById('vaForgotSubmitBtn').addEventListener('click', async function() {
+      const email = document.getElementById('vaForgotEmail').value.trim();
+      const msgEl = document.getElementById('vaForgotMsg');
+      const btn = document.getElementById('vaForgotSubmitBtn');
+      msgEl.style.color = '#9a93a6';
+      msgEl.textContent = '';
+      if (!email) { msgEl.style.color = '#f09090'; msgEl.textContent = 'Please enter your email.'; return; }
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        msgEl.style.color = '#7ce8d6';
+        msgEl.textContent = 'If that email exists, a reset link is on its way.';
+      } catch(e) {
+        msgEl.style.color = '#f09090';
+        msgEl.textContent = 'Network error — try again.';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Send Reset Link';
+    });
+    document.getElementById('vaForgotEmail').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('vaForgotSubmitBtn').click();
     });
   }
 

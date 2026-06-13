@@ -313,6 +313,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <div class="tip">💡 Good lighting</div>
     <div class="tip">💡 Fill the frame</div>
     <div class="tip">💡 Both sides = better estimate</div>
+    <div class="tip">📱 iPhone users: Camera > Formats > Most Compatible</div>
   </div>
 </div>
 
@@ -494,7 +495,11 @@ document.getElementById('frontRemove').addEventListener('click', function(e) {
 });
 
 function handleFront(file) {
-  if (!file.type.startsWith('image/')) return;
+  if (!file.type.startsWith('image/') && file.name && !file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i)) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Photo is too large (max 10MB). Please use a smaller image.');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = function(e) {
     frontDataURL = e.target.result;
@@ -541,7 +546,11 @@ document.getElementById('backRemove').addEventListener('click', function(e) {
 });
 
 function handleBack(file) {
-  if (!file.type.startsWith('image/')) return;
+  if (!file.type.startsWith('image/') && file.name && !file.name.match(/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i)) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Photo is too large (max 10MB). Please use a smaller image.');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = function(e) {
     backDataURL = e.target.result;

@@ -49,16 +49,37 @@ router.post('/analyze', requireAuth, async (req, res) => {
   const frontRaw = front_image || image;
 
   function parseDataURL(dataUrl, label) {
-    if (!dataUrl || !dataUrl.startsWith('data:image/')) {
-      return { error: `Invalid ${label} image data.` };
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      return { error: `No ${label} image received.` };
     }
-    const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-    if (!m) return { error: `Could not parse ${label} image data.` };
-    const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!supported.includes(m[1])) {
-      return { error: `Unsupported image type for ${label}. Please upload a JPEG, PNG, or WebP.` };
+    if (!dataUrl.startsWith('data:')) {
+      return { error: `Invalid ${label} image format.` };
     }
-    return { mediaType: m[1], base64Data: m[2] };
+    // Strip whitespace that some encoders inject into base64
+    const clean = dataUrl.replace(/\s/g, '');
+    const m = clean.match(/^data:(image\/[a-zA-Z0-9+\-.]+);base64,(.+)$/);
+    if (!m) {
+      console.error(`[grader] parseDataURL failed for ${label}:`, dataUrl.slice(0, 80));
+      return { error: `Could not parse ${label} image. Please try a different photo.` };
+    }
+    const mediaType = m[1];
+    const base64Data = m[2];
+
+    // HEIC/HEIF not supported by Claude API — give clear instructions
+    if (mediaType === 'image/heic' || mediaType === 'image/heif') {
+      return { error: `iPhone HEIC photos aren't supported yet. In your iPhone Settings, go to Camera > Formats and select "Most Compatible" to shoot in JPEG, then try again.` };
+    }
+
+    const supported = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+    if (!supported.includes(mediaType)) {
+      console.error(`[grader] Unsupported media type for ${label}:`, mediaType);
+      return { error: `Unsupported image format (${mediaType}). Please use JPEG, PNG, or WebP.` };
+    }
+
+    // Normalize image/jpg -> image/jpeg for Anthropic API
+    const apiMediaType = mediaType === 'image/jpg' ? 'image/jpeg' : mediaType;
+
+    return { mediaType: apiMediaType, base64Data };
   }
 
   const front = parseDataURL(frontRaw, 'front');

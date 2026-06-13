@@ -24,6 +24,7 @@ app.use('/api/newsletter', require('./routes/newsletter'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/friends', require('./routes/friends'));
 app.use('/api/grader', require('./routes/grader'));
+app.use('/api/spotlight', require('./routes/spotlight'));
 app.use('/api/admin', require('./routes/admin'));
 
 // Fallback — serve homepage only for non-file, non-API routes

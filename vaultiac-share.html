@@ -229,7 +229,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.04;z
 
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -680,14 +679,11 @@ window.addEventListener('load', function() {
 document.querySelectorAll('.share-btn[data-platform]').forEach(btn => {
   btn.addEventListener('click', async () => {
     const platform = btn.dataset.platform;
-    if(platform === 'copy'){
-      // copy current URL (mockup — real app copies spotlight URL)
-      navigator.clipboard.writeText(window.location.href).catch(()=>{});
+    if (platform === 'copy') {
+      navigator.clipboard.writeText(window.location.href).catch(() => {});
       showToast('✓ Link copied to clipboard');
       return;
     }
-    // In real app: export spotlight as image, then open platform share URL
-    // For mockup: show feedback toast
     const messages = {
       instagram: '📸 Saved to downloads — post from Instagram',
       twitter:   '𝕏 Saved to downloads — post from X',
@@ -695,50 +691,85 @@ document.querySelectorAll('.share-btn[data-platform]').forEach(btn => {
       snapchat:  '👻 Saved to downloads — post from Snapchat',
       pinterest: '📌 Saved to downloads — post from Pinterest',
     };
-    // Export image first, then show instructions
+    btn.style.opacity = '0.5';
     try {
-      const target = document.querySelector('.mini-spotlight');
-      const canvas = await html2canvas(target, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        scale: 3,
-        logging: false,
-      });
+      const url = await generateSpotlightImage();
       const link = document.createElement('a');
       link.download = 'vaultiac-spotlight.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = url;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch(e) {
-      console.error('Export error:', e);
+      console.error('Spotlight render error:', e);
     }
+    btn.style.opacity = '1';
     showToast(messages[platform] || 'Image saved!');
   });
 });
+
+async function generateSpotlightImage() {
+  const raw = sessionStorage.getItem('vaultiac_card');
+  const bgRaw = sessionStorage.getItem('vaultiac_spotlight_bg');
+  let cardData = {};
+  let bgKey = 'aurora';
+
+  try { cardData = JSON.parse(raw || '{}'); } catch(e) {}
+  try {
+    const bgState = JSON.parse(bgRaw || '{}');
+    bgKey = bgState.scene || bgState.color || 'aurora';
+  } catch(e) {}
+
+  const user = (() => { try { return JSON.parse(localStorage.getItem('vaultiac_user')); } catch(e) { return null; } })();
+  const token = localStorage.getItem('vaultiac_token');
+
+  const payload = {
+    card_name:       cardData.name || 'My Card',
+    card_set:        cardData.set || '',
+    card_number:     cardData.number || cardData.num || '',
+    card_rarity:     cardData.rarity || '',
+    card_image_url:  cardData.image_large || cardData.image_small || '',
+    price:           cardData.price || '',
+    trend:           cardData.trend || '',
+    trend_up:        !!cardData.up,
+    caption_eyebrow: document.getElementById('msEyebrow')?.textContent || 'Latest Pickup',
+    caption_big:     document.getElementById('msBig')?.textContent || 'Just Pulled It.',
+    username:        user?.username || '',
+    background:      bgKey,
+  };
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+
+  const res = await fetch('/api/spotlight/render', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Server error');
+  }
+
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
 
 document.getElementById('downloadBtn').addEventListener('click', async () => {
   const btn = document.getElementById('downloadBtn');
   btn.textContent = 'Generating image…';
   btn.disabled = true;
-
   try {
-    const target = document.querySelector('.mini-spotlight');
-    const canvas = await html2canvas(target, {
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      scale: 3,
-      logging: false,
-    });
-
+    const url = await generateSpotlightImage();
     const link = document.createElement('a');
     link.download = 'vaultiac-spotlight.png';
-    link.href = canvas.toDataURL('image/png');
+    link.href = url;
     link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
     showToast('✓ Image saved!');
   } catch(e) {
-    console.error('Export error:', e);
-    showToast('⚠ Could not export — try again');
+    console.error('Spotlight render error:', e);
+    showToast('Could not generate image — try again');
   } finally {
     btn.textContent = '↓  Save image to camera roll';
     btn.disabled = false;

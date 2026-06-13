@@ -264,13 +264,14 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <div class="stat-box"><div class="sb-val" id="pAvgPts">--</div><div class="sb-lbl">Avg pts/day</div></div>
   </div>
   <div class="personal-section-label">Clue Breakdown</div>
-  <div class="clue-breakdown">
-    <div class="cb-row"><span class="cb-clue">Clue 1</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:18%"></div></div><span class="cb-pct">18%</span><span class="cb-pts">6pts</span></div>
-    <div class="cb-row"><span class="cb-clue">Clue 2</span><div class="cb-bar-wrap"><div class="cb-bar" style="width:28%"></div></div><span class="cb-pct">28%</span><span class="cb-pts">5pts</span></div>
-    <div class="cb-row"><span class="cb-clue">Clue 3</span><div class="cb-bar-wrap"><div class="cb-bar cb-mid" style="width:32%"></div></div><span class="cb-pct">32%</span><span class="cb-pts">4pts</span></div>
-    <div class="cb-row"><span class="cb-clue">Clue 4</span><div class="cb-bar-wrap"><div class="cb-bar cb-low" style="width:12%"></div></div><span class="cb-pct">12%</span><span class="cb-pts">3pts</span></div>
-    <div class="cb-row"><span class="cb-clue">Clue 5</span><div class="cb-bar-wrap"><div class="cb-bar cb-low" style="width:6%"></div></div><span class="cb-pct">6%</span><span class="cb-pts">2pts</span></div>
-    <div class="cb-row"><span class="cb-clue">Missed</span><div class="cb-bar-wrap"><div class="cb-bar cb-miss" style="width:4%"></div></div><span class="cb-pct">4%</span><span class="cb-pts">0pts</span></div>
+  <div class="clue-breakdown" id="clueBreakdown">
+    <div class="cb-row"><span class="cb-clue">Clue 1</span><div class="cb-bar-wrap"><div class="cb-bar" id="cbBar1" style="width:0%"></div></div><span class="cb-pct" id="cbPct1">--</span><span class="cb-pts">6pts</span></div>
+    <div class="cb-row"><span class="cb-clue">Clue 2</span><div class="cb-bar-wrap"><div class="cb-bar" id="cbBar2" style="width:0%"></div></div><span class="cb-pct" id="cbPct2">--</span><span class="cb-pts">5pts</span></div>
+    <div class="cb-row"><span class="cb-clue">Clue 3</span><div class="cb-bar-wrap"><div class="cb-bar cb-mid" id="cbBar3" style="width:0%"></div></div><span class="cb-pct" id="cbPct3">--</span><span class="cb-pts">4pts</span></div>
+    <div class="cb-row"><span class="cb-clue">Clue 4</span><div class="cb-bar-wrap"><div class="cb-bar cb-low" id="cbBar4" style="width:0%"></div></div><span class="cb-pct" id="cbPct4">--</span><span class="cb-pts">3pts</span></div>
+    <div class="cb-row"><span class="cb-clue">Clue 5</span><div class="cb-bar-wrap"><div class="cb-bar cb-low" id="cbBar5" style="width:0%"></div></div><span class="cb-pct" id="cbPct5">--</span><span class="cb-pts">2pts</span></div>
+    <div class="cb-row"><span class="cb-clue">Clue 6</span><div class="cb-bar-wrap"><div class="cb-bar cb-low" id="cbBar6" style="width:0%"></div></div><span class="cb-pct" id="cbPct6">--</span><span class="cb-pts">1pt</span></div>
+    <div class="cb-row"><span class="cb-clue">Missed</span><div class="cb-bar-wrap"><div class="cb-bar cb-miss" id="cbBarMiss" style="width:0%"></div></div><span class="cb-pct" id="cbPctMiss">--</span><span class="cb-pts">0pts</span></div>
   </div>
   <div class="personal-section-label">Last 30 Days</div>
   <div class="activity-cal" id="activityCal"></div>
@@ -368,33 +369,123 @@ async function loadYourCard() {
 
 async function loadPersonalPanel() {
   if (!username) {
-    document.getElementById('pCurStreak').textContent = '--';
-    document.getElementById('pBestStreak').textContent = '--';
-    document.getElementById('pTotalPts').textContent = '--';
-    document.getElementById('pAvgPts').textContent = '--';
+    ['pCurStreak','pBestStreak','pTotalPts','pAvgPts'].forEach(id => {
+      document.getElementById(id).textContent = '--';
+    });
+    for (let i = 1; i <= 6; i++) {
+      document.getElementById('cbBar'+i).style.width = '0%';
+      document.getElementById('cbPct'+i).textContent = '--';
+    }
+    document.getElementById('cbBarMiss').style.width = '0%';
+    document.getElementById('cbPctMiss').textContent = '--';
     return;
   }
+
   try {
-    const res = await fetch(`/api/leaderboard/user/${encodeURIComponent(username)}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    const user = data.data;
-    if (!user) return;
+    const [statsRes, sessionsRes] = await Promise.all([
+      fetch(`/api/leaderboard/user/${encodeURIComponent(username)}`),
+      fetch(`/api/leaderboard/user/${encodeURIComponent(username)}/sessions`)
+    ]);
 
-    document.getElementById('pCurStreak').textContent = user.current_streak || 0;
-    document.getElementById('pBestStreak').textContent = user.longest_streak || 0;
-    document.getElementById('pTotalPts').textContent = user.total_points || 0;
+    if (statsRes.ok) {
+      const statsData = await statsRes.json();
+      const user = statsData.data;
+      if (user) {
+        document.getElementById('pCurStreak').textContent = user.current_streak || 0;
+        document.getElementById('pBestStreak').textContent = user.longest_streak || 0;
+        document.getElementById('pTotalPts').textContent = user.total_points || 0;
+        if (user.last_played_date) {
+          const firstPlay = new Date(user.last_played_date);
+          const days = Math.max(1, Math.ceil((Date.now() - firstPlay) / 86400000));
+          document.getElementById('pAvgPts').textContent = (user.total_points / days).toFixed(1);
+        } else {
+          document.getElementById('pAvgPts').textContent = '0';
+        }
+      }
+    }
 
-    if (user.last_played_date) {
-      const firstPlay = new Date(user.last_played_date);
-      const days = Math.max(1, Math.ceil((Date.now() - firstPlay) / 86400000));
-      document.getElementById('pAvgPts').textContent = (user.total_points / days).toFixed(1);
-    } else {
-      document.getElementById('pAvgPts').textContent = '0';
+    if (sessionsRes.ok) {
+      const sessionsData = await sessionsRes.json();
+      const sessions = sessionsData.data || [];
+      buildActivityCalendar(sessions);
+      buildClueBreakdown(sessions);
     }
   } catch (err) {
     console.warn('Could not load personal stats:', err);
   }
+}
+
+function buildActivityCalendar(sessions) {
+  const cal = document.getElementById('activityCal');
+  cal.innerHTML = '';
+
+  const playMap = {};
+  sessions.forEach(s => {
+    const d = new Date(s.played_at);
+    const key = d.toISOString().slice(0, 10);
+    playMap[key] = parseInt(s.solved) === 1 ? 'correct' : 'wrong';
+  });
+
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const dayNum = d.getDate();
+    const result = playMap[key];
+    const isToday = i === 0;
+
+    const el = document.createElement('div');
+    if (isToday && result) {
+      el.className = 'ac-day ' + (result === 'correct' ? 'ac-correct' : 'ac-wrong');
+    } else if (isToday) {
+      el.className = 'ac-day ac-today';
+    } else if (result === 'correct') {
+      el.className = 'ac-day ac-correct';
+    } else if (result === 'wrong') {
+      el.className = 'ac-day ac-wrong';
+    } else {
+      el.className = 'ac-day ac-empty';
+    }
+    el.textContent = dayNum;
+    cal.appendChild(el);
+  }
+}
+
+function buildClueBreakdown(sessions) {
+  const total = sessions.length;
+  if (total === 0) {
+    for (let i = 1; i <= 6; i++) {
+      document.getElementById('cbBar'+i).style.width = '0%';
+      document.getElementById('cbPct'+i).textContent = '0%';
+    }
+    document.getElementById('cbBarMiss').style.width = '0%';
+    document.getElementById('cbPctMiss').textContent = '0%';
+    return;
+  }
+
+  const counts = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, miss:0};
+  sessions.forEach(s => {
+    if (parseInt(s.solved) === 1) {
+      const clue = Math.min(Math.max(parseInt(s.clues_used), 1), 6);
+      counts[clue]++;
+    } else {
+      counts.miss++;
+    }
+  });
+
+  const maxCount = Math.max(...Object.values(counts), 1);
+
+  for (let i = 1; i <= 6; i++) {
+    const pct = Math.round((counts[i] / total) * 100);
+    const barWidth = Math.round((counts[i] / maxCount) * 100);
+    document.getElementById('cbBar'+i).style.width = barWidth + '%';
+    document.getElementById('cbPct'+i).textContent = pct + '%';
+  }
+  const missPct = Math.round((counts.miss / total) * 100);
+  const missWidth = Math.round((counts.miss / maxCount) * 100);
+  document.getElementById('cbBarMiss').style.width = missWidth + '%';
+  document.getElementById('cbPctMiss').textContent = missPct + '%';
 }
 
 function updateFriendsPanel(){

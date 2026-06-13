@@ -34,4 +34,22 @@ router.get('/user/:username', async (req, res) => {
   }
 });
 
+// GET /api/leaderboard/user/:username/sessions — last 30 days of trivia sessions
+router.get('/user/:username/sessions', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT clues_used, points_earned, solved, played_at
+       FROM trivia_sessions
+       WHERE username = $1
+         AND played_at >= NOW() - INTERVAL '30 days'
+       ORDER BY played_at ASC`,
+      [req.params.username]
+    );
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Sessions error:', err.message);
+    res.status(500).json({ error: 'Failed to load sessions' });
+  }
+});
+
 module.exports = router;

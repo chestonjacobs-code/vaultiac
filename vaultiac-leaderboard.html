@@ -557,24 +557,41 @@ async function copyInvite(){
   const c=document.getElementById('inviteConfirm');
   btn.disabled=true;
   btn.textContent='Generating link…';
+  c.classList.remove('show');
   try {
-    const token=localStorage.getItem('vaultiac_token');
+    const token=VaultAuth.getToken();
+    if(!token) throw new Error('Not logged in');
     const res=await fetch('/api/friends/invite',{
       method:'POST',
-      headers:{'Authorization':'Bearer '+token}
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
     });
     const data=await res.json();
-    if(!res.ok||!data.token) throw new Error(data.error||'Failed');
+    if(!res.ok||!data.token) throw new Error(data.error||'Server error: '+res.status);
     const invite_link='https://vaultiac.com/vaultiac-leaderboard.html?invite='+data.token;
-    await navigator.clipboard.writeText(invite_link);
+    // Clipboard with fallback for mobile Safari
+    try {
+      await navigator.clipboard.writeText(invite_link);
+    } catch(clipErr) {
+      // Fallback: create temp input, select, copy
+      const inp=document.createElement('input');
+      inp.style.position='fixed';inp.style.opacity='0';
+      inp.value=invite_link;
+      document.body.appendChild(inp);
+      inp.focus();inp.select();
+      document.execCommand('copy');
+      document.body.removeChild(inp);
+    }
     c.textContent='Link copied!';
+    c.style.color='var(--holo1)';
   } catch(err) {
-    c.textContent='Could not generate link. Try again.';
+    console.error('[copyInvite] error:', err.message);
+    c.textContent='Error: '+err.message;
+    c.style.color='#f08080';
   }
   c.classList.add('show');
   btn.disabled=false;
   btn.innerHTML='&#128279; Copy invite link';
-  setTimeout(()=>c.classList.remove('show'),2800);
+  setTimeout(()=>c.classList.remove('show'),3500);
 }
 
 // Build activity calendar — last 30 days

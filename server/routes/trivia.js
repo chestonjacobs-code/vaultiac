@@ -153,9 +153,16 @@ router.get('/daily', async (req, res) => {
       });
     }
 
-    // Generate today's Pokémon — deterministic seed based on date
-    const dateNum = parseInt(today.replace(/-/g, ''));
-    const randomId = (dateNum % 1025) + 1;
+    // Generate today's Pokémon — hash-based seed for even distribution across all 1025
+    function hashDate(dateStr) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < dateStr.length; i++) {
+        h ^= dateStr.charCodeAt(i);
+        h = (h * 0x01000193) >>> 0;
+      }
+      return h;
+    }
+    const randomId = (hashDate(today) % 1025) + 1;
 
     const [pokemonRes, speciesRes] = await Promise.all([
       axios.get(`${POKEAPI_BASE}/pokemon/${randomId}`),

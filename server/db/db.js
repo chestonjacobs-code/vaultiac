@@ -107,6 +107,15 @@ async function initSchema() {
       CREATE INDEX IF NOT EXISTS idx_friendships_a ON friendships(user_a_id);
       CREATE INDEX IF NOT EXISTS idx_friendships_b ON friendships(user_b_id);
     `);
+    // Drop FK constraint on friend_invites.inviter_id — users table may be empty in production
+    await client.query(`
+      ALTER TABLE friend_invites DROP CONSTRAINT IF EXISTS friend_invites_inviter_id_fkey;
+    `);
+    // Same for friendships
+    await client.query(`
+      ALTER TABLE friendships DROP CONSTRAINT IF EXISTS friendships_user_a_id_fkey;
+      ALTER TABLE friendships DROP CONSTRAINT IF EXISTS friendships_user_b_id_fkey;
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

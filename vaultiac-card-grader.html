@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="shortcut icon" href="/favicon.svg"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Upload your card and get an AI-estimated PSA, CGC, and TAG grade instantly."/>
+<meta property="og:title" content="VAULTIAC Card Grader"/>
+<meta property="og:description" content="Upload your card and get an AI-estimated PSA, CGC, and TAG grade instantly."/>
+<meta property="og:url" content="https://vaultiac.com/vaultiac-card-grader.html"/>
+<meta property="og:type" content="website"/>
+<meta property="og:image" content="https://vaultiac.com/og-image.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="VAULTIAC Card Grader"/>
+<meta name="twitter:description" content="Upload your card and get an AI-estimated PSA, CGC, and TAG grade instantly."/>
+<meta name="twitter:image" content="https://vaultiac.com/og-image.png"/>
+<title>Card Grader — VAULTIAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0a10;--paper:#f3eee6;--muted:#9a93a6;--line:rgba(255,255,255,.10);
+  --gold:#e8c27a;--holo1:#7ce8d6;--holo2:#a78bfa;--holo3:#f0a6c8;--holo4:#ffd98a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;font-family:"Hanken Grotesk",system-ui,sans-serif;
+  background:radial-gradient(1200px 700px at 50% -10%,#1b1726 0%,transparent 60%),
+    radial-gradient(900px 600px at 85% 110%,#211a2c 0%,transparent 55%),var(--ink);
+  color:var(--paper);display:flex;flex-direction:column;align-items:center;
+  padding:40px 20px 80px;overflow-x:hidden;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;z-index:1;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* HOME BUTTON */
+.home-btn{position:fixed;top:16px;left:16px;z-index:30;font-family:inherit;font-size:12px;font-weight:700;
+  color:#9a93a6;background:#1a1728;border:1px solid rgba(255,255,255,.09);border-radius:10px;
+  padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.2s;}
+.home-btn:hover{color:var(--paper);}
+
+/* TOP BAR */
+.topbar{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;position:relative;z-index:2;opacity:0;animation:rise .6s .1s ease forwards;}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);
+  background:none;border:none;cursor:pointer;padding:6px 0;transition:.2s;}
+.back-btn:hover{color:var(--paper);}
+.topbar-brand{font-family:"Fraunces",serif;font-weight:900;font-size:15px;letter-spacing:.06em;
+  background:linear-gradient(120deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.topbar-right{width:60px;}
+
+/* PAGE HEAD */
+.page-head{text-align:center;margin-bottom:28px;position:relative;z-index:2;opacity:0;animation:rise .6s .15s ease forwards;}
+.page-head .kick{font-size:10px;letter-spacing:.44em;text-transform:uppercase;color:var(--gold);font-weight:700;}
+.page-head h1{font-family:"Fraunces",serif;font-weight:900;font-size:36px;line-height:1;margin-top:8px;
+  background:linear-gradient(120deg,#fff,var(--gold),var(--holo2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.page-head .sub{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6;max-width:360px;margin-left:auto;margin-right:auto;}
+
+/* UPLOAD ZONE */
+.upload-zone{width:100%;max-width:480px;position:relative;z-index:2;opacity:0;animation:rise .7s .25s ease forwards;}
+.upload-card{border-radius:20px;padding:32px 24px;text-align:center;
+  background:linear-gradient(155deg,#16121e,#0d0b12);
+  border:2px dashed rgba(167,139,250,.3);cursor:pointer;transition:.3s;position:relative;overflow:hidden;}
+.upload-card:hover{border-color:rgba(167,139,250,.6);background:rgba(167,139,250,.04);}
+.upload-card.drag-over{border-color:var(--holo2);background:rgba(167,139,250,.08);}
+.upload-card.has-image{border-style:solid;border-color:rgba(167,139,250,.4);cursor:default;}
+.upload-icon{font-size:40px;margin-bottom:12px;opacity:.7;}
+.upload-title{font-family:"Fraunces",serif;font-weight:700;font-size:20px;margin-bottom:6px;}
+.upload-sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+.upload-btn{font-family:inherit;font-size:14px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:12px;
+  padding:12px 28px;cursor:pointer;transition:.2s;display:inline-block;}
+.upload-btn:hover{opacity:.9;transform:translateY(-1px);}
+.upload-input{display:none;}
+
+/* image preview inside upload zone */
+.preview-wrap{position:relative;display:inline-block;margin-bottom:16px;}
+.preview-img{max-width:200px;max-height:280px;border-radius:10px;
+  box-shadow:0 20px 50px -15px rgba(0,0,0,.9);object-fit:contain;display:block;}
+.preview-remove{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;
+  background:#1a1728;border:1px solid rgba(255,255,255,.15);color:var(--muted);
+  font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;}
+.preview-remove:hover{color:var(--paper);border-color:rgba(255,255,255,.3);}
+
+/* TIPS */
+.tips{width:100%;max-width:480px;margin-top:12px;position:relative;z-index:2;opacity:0;animation:rise .6s .3s ease forwards;}
+.tips-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tip{font-size:11px;font-weight:600;color:var(--muted);background:rgba(255,255,255,.04);
+  border:1px solid var(--line);border-radius:999px;padding:5px 12px;display:flex;align-items:center;gap:5px;}
+
+/* ANALYZE BUTTON */
+.analyze-wrap{width:100%;max-width:480px;margin-top:16px;position:relative;z-index:2;opacity:0;animation:rise .6s .35s ease forwards;}
+.analyze-btn{width:100%;font-family:"Fraunces",serif;font-weight:900;font-size:18px;letter-spacing:.02em;
+  background:linear-gradient(90deg,#c8a050,var(--gold),#f5d99a);color:#06050c;
+  border:none;border-radius:14px;padding:16px;cursor:pointer;transition:.25s;
+  box-shadow:0 8px 28px rgba(232,194,122,.25);}
+.analyze-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(232,194,122,.4);}
+.analyze-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none;}
+
+/* GUEST GATE */
+.guest-gate{width:100%;max-width:480px;margin-top:16px;border-radius:16px;padding:20px;text-align:center;
+  background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid rgba(167,139,250,.2);
+  position:relative;z-index:2;opacity:0;animation:rise .6s .35s ease forwards;display:none;}
+.gate-title{font-family:"Fraunces",serif;font-weight:700;font-size:18px;margin-bottom:6px;}
+.gate-sub{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.gate-btn{font-family:inherit;font-size:14px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:12px;
+  padding:12px 28px;cursor:pointer;transition:.2s;width:100%;}
+.gate-btn:hover{opacity:.9;}
+
+/* LOADING STATE */
+.loading-state{width:100%;max-width:480px;margin-top:20px;text-align:center;
+  position:relative;z-index:2;display:none;}
+.loading-state.show{display:block;animation:rise .4s ease forwards;}
+.scan-animation{width:80px;height:80px;margin:0 auto 16px;position:relative;}
+.scan-ring{width:80px;height:80px;border-radius:50%;border:2px solid rgba(167,139,250,.2);
+  border-top-color:var(--holo2);animation:spin 1s linear infinite;position:absolute;inset:0;}
+.scan-ring2{width:60px;height:60px;border-radius:50%;border:2px solid rgba(232,194,122,.15);
+  border-bottom-color:var(--gold);animation:spin 1.5s linear infinite reverse;
+  position:absolute;top:10px;left:10px;}
+.scan-center{width:8px;height:8px;border-radius:50%;background:var(--holo2);
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:pulse 1s ease-in-out infinite;}
+.loading-text{font-size:14px;font-weight:600;color:var(--muted);}
+.loading-sub{font-size:12px;color:rgba(154,147,166,.6);margin-top:4px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(.8);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}}
+
+/* RESULTS PANEL */
+.results-panel{width:100%;max-width:480px;margin-top:20px;position:relative;z-index:2;display:none;}
+.results-panel.show{display:block;animation:rise .5s ease forwards;}
+
+.results-head{text-align:center;margin-bottom:20px;}
+.results-head .rh-kick{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
+.results-head .rh-title{font-family:"Fraunces",serif;font-weight:900;font-size:24px;}
+
+/* Grade cards — 3 in a row */
+.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.grade-card{border-radius:16px;padding:16px 12px;text-align:center;
+  background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid var(--line);
+  position:relative;overflow:hidden;}
+.grade-card.grade-high{border-color:rgba(124,232,214,.35);background:radial-gradient(circle at 50% 0%,rgba(124,232,214,.08),transparent 60%),linear-gradient(155deg,#16121e,#0d0b12);}
+.grade-card.grade-mid{border-color:rgba(232,194,122,.3);background:radial-gradient(circle at 50% 0%,rgba(232,194,122,.06),transparent 60%),linear-gradient(155deg,#16121e,#0d0b12);}
+.grade-card.grade-low{border-color:rgba(240,100,100,.2);background:radial-gradient(circle at 50% 0%,rgba(240,100,100,.05),transparent 60%),linear-gradient(155deg,#16121e,#0d0b12);}
+.gc-company{font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.gc-grade{font-family:"Fraunces",serif;font-weight:900;font-size:42px;line-height:1;}
+.grade-card.grade-high .gc-grade{background:linear-gradient(90deg,#fff,var(--holo1));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.grade-card.grade-mid .gc-grade{background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.grade-card.grade-low .gc-grade{color:rgba(240,160,160,.9);}
+.gc-label{font-size:10px;font-weight:700;color:var(--muted);margin-top:4px;letter-spacing:.06em;}
+.gc-sub{font-size:9px;color:rgba(154,147,166,.6);margin-top:3px;}
+
+/* Analysis detail */
+.analysis-card{border-radius:16px;padding:20px;margin-bottom:12px;
+  background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid var(--line);}
+.analysis-section{margin-bottom:14px;}
+.analysis-section:last-child{margin-bottom:0;}
+.as-label{font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px;}
+.as-text{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* Attribute bars */
+.attr-bars{display:flex;flex-direction:column;gap:8px;}
+.attr-row{display:flex;align-items:center;gap:10px;}
+.attr-name{font-size:11px;font-weight:600;color:var(--muted);width:72px;flex:none;}
+.attr-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.attr-bar{height:100%;border-radius:3px;transition:.8s ease;}
+.attr-bar.bar-high{background:linear-gradient(90deg,var(--holo2),var(--holo1));}
+.attr-bar.bar-mid{background:linear-gradient(90deg,var(--gold),#f5d99a);}
+.attr-bar.bar-low{background:linear-gradient(90deg,#c05050,#f09090);}
+.attr-score{font-size:11px;font-weight:700;color:var(--paper);width:28px;text-align:right;flex:none;}
+
+/* disclaimer */
+.disclaimer{font-size:11px;color:rgba(154,147,166,.5);text-align:center;line-height:1.6;margin-top:4px;padding:0 8px;}
+
+/* try again */
+.try-again-btn{width:100%;font-family:inherit;font-size:14px;font-weight:700;color:var(--muted);
+  background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;
+  padding:12px;cursor:pointer;transition:.2s;margin-top:12px;}
+.try-again-btn:hover{color:var(--paper);border-color:rgba(255,255,255,.2);}
+
+/* error state */
+.error-state{width:100%;max-width:480px;margin-top:16px;border-radius:16px;padding:20px;text-align:center;
+  background:rgba(240,100,100,.05);border:1px solid rgba(240,100,100,.2);
+  position:relative;z-index:2;display:none;}
+.error-state.show{display:block;animation:rise .4s ease forwards;}
+.error-title{font-size:15px;font-weight:700;color:#f09090;margin-bottom:6px;}
+.error-sub{font-size:13px;color:var(--muted);}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<button class="home-btn" onclick="window.location.href='vaultiac-home.html'">← Home</button>
+
+<div class="topbar">
+  <button class="back-btn" onclick="window.location.href='vaultiac-home.html'">‹ Home</button>
+  <div class="topbar-brand">VAULTIAC</div>
+  <div class="topbar-right"></div>
+</div>
+
+<div class="page-head">
+  <div class="kick">AI-Powered</div>
+  <h1>Card Grader</h1>
+  <p class="sub">Upload a photo of your card and get instant estimated grades from PSA, CGC, and TAG.</p>
+</div>
+
+<!-- UPLOAD ZONE -->
+<div class="upload-zone">
+  <div class="upload-card" id="uploadCard">
+    <div id="uploadPrompt">
+      <div class="upload-icon">📷</div>
+      <div class="upload-title">Upload your card</div>
+      <div class="upload-sub">Take a clear photo on a flat surface with good lighting. Front of card only.</div>
+      <button class="upload-btn" id="uploadTrigger">Choose photo</button>
+    </div>
+    <div id="uploadPreview" style="display:none;">
+      <div class="preview-wrap">
+        <img class="preview-img" id="previewImg" src="" alt="Card preview"/>
+        <button class="preview-remove" id="removeBtn" title="Remove">✕</button>
+      </div>
+      <div style="font-size:13px;color:var(--muted);" id="previewName"></div>
+    </div>
+    <input class="upload-input" type="file" id="fileInput" accept="image/*"/>
+  </div>
+</div>
+
+<!-- TIPS -->
+<div class="tips">
+  <div class="tips-row">
+    <div class="tip">💡 Flat surface</div>
+    <div class="tip">💡 Good lighting</div>
+    <div class="tip">💡 Front only</div>
+    <div class="tip">💡 Fill the frame</div>
+  </div>
+</div>
+
+<!-- ANALYZE BUTTON (logged-in users) -->
+<div class="analyze-wrap" id="analyzeWrap" style="display:none;">
+  <button class="analyze-btn" id="analyzeBtn" disabled>Grade this card</button>
+</div>
+
+<!-- GUEST GATE (guests) -->
+<div class="guest-gate" id="guestGate">
+  <div class="gate-title">Sign in to grade cards</div>
+  <div class="gate-sub">Create a free account to use the card grader and track your results.</div>
+  <button class="gate-btn" onclick="window.vaultiacOpenAuth('signup')">Create free account</button>
+</div>
+
+<!-- LOADING -->
+<div class="loading-state" id="loadingState">
+  <div class="scan-animation">
+    <div class="scan-ring"></div>
+    <div class="scan-ring2"></div>
+    <div class="scan-center"></div>
+  </div>
+  <div class="loading-text">Analyzing your card...</div>
+  <div class="loading-sub">Checking centering, corners, edges, and surface</div>
+</div>
+
+<!-- ERROR -->
+<div class="error-state" id="errorState">
+  <div class="error-title">Could not analyze this image</div>
+  <div class="error-sub" id="errorMsg">Make sure the card is clearly visible and try again.</div>
+</div>
+
+<!-- RESULTS -->
+<div class="results-panel" id="resultsPanel">
+  <div class="results-head">
+    <div class="rh-kick">Estimated Grades</div>
+    <div class="rh-title" id="resultsCardName">Your Card</div>
+  </div>
+
+  <!-- 3 grade cards -->
+  <div class="grade-grid">
+    <div class="grade-card" id="gcPSA">
+      <div class="gc-company">PSA</div>
+      <div class="gc-grade" id="gradePSA">—</div>
+      <div class="gc-label" id="labelPSA">—</div>
+    </div>
+    <div class="grade-card" id="gcCGC">
+      <div class="gc-company">CGC</div>
+      <div class="gc-grade" id="gradeCGC">—</div>
+      <div class="gc-label" id="labelCGC">—</div>
+      <div class="gc-sub">half-point scale</div>
+    </div>
+    <div class="grade-card" id="gcTAG">
+      <div class="gc-company">TAG</div>
+      <div class="gc-grade" id="gradeTAG">—</div>
+      <div class="gc-label" id="labelTAG">—</div>
+    </div>
+  </div>
+
+  <!-- Attribute breakdown -->
+  <div class="analysis-card">
+    <div class="analysis-section">
+      <div class="as-label">Condition Breakdown</div>
+      <div class="attr-bars" id="attrBars">
+        <div class="attr-row">
+          <span class="attr-name">Centering</span>
+          <div class="attr-bar-wrap"><div class="attr-bar" id="barCentering" style="width:0%"></div></div>
+          <span class="attr-score" id="scoreCentering">—</span>
+        </div>
+        <div class="attr-row">
+          <span class="attr-name">Corners</span>
+          <div class="attr-bar-wrap"><div class="attr-bar" id="barCorners" style="width:0%"></div></div>
+          <span class="attr-score" id="scoreCorners">—</span>
+        </div>
+        <div class="attr-row">
+          <span class="attr-name">Edges</span>
+          <div class="attr-bar-wrap"><div class="attr-bar" id="barEdges" style="width:0%"></div></div>
+          <span class="attr-score" id="scoreEdges">—</span>
+        </div>
+        <div class="attr-row">
+          <span class="attr-name">Surface</span>
+          <div class="attr-bar-wrap"><div class="attr-bar" id="barSurface" style="width:0%"></div></div>
+          <span class="attr-score" id="scoreSurface">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="analysis-section">
+      <div class="as-label">What We Noticed</div>
+      <div class="as-text" id="analysisNotes">—</div>
+    </div>
+    <div class="analysis-section">
+      <div class="as-label">Grader Insight</div>
+      <div class="as-text" id="graderInsight">—</div>
+    </div>
+  </div>
+
+  <div class="disclaimer">AI estimates only — not a guarantee of official grade. Actual grades may vary based on grader judgment, lighting conditions, and card orientation. Always submit to a grading company for official certification.</div>
+
+  <button class="try-again-btn" id="tryAgainBtn">Grade another card</button>
+</div>
+
+<!-- SUGGESTION FOOTER -->
+<div style="width:100%;max-width:480px;margin-top:28px;position:relative;z-index:2;">
+  <button id="suggestTrigger" style="width:100%;display:flex;align-items:center;gap:10px;font-family:inherit;font-size:13px;font-weight:600;color:#9a93a6;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);padding:13px 16px;border-radius:14px;cursor:pointer;transition:.2s;">
+    <span style="font-size:16px;">💡</span>
+    <span style="flex:1;text-align:left;">Got an idea? Tell us</span>
+    <span style="color:var(--gold);font-size:16px;">›</span>
+  </button>
+</div>
+
+<script>
+// ===== AUTH STATE =====
+function getCurrentUsername() {
+  try {
+    const u = JSON.parse(localStorage.getItem('vaultiac_user'));
+    return (u && u.username) ? u.username : null;
+  } catch(e) { return null; }
+}
+
+function initAuthState() {
+  const isLoggedIn = !!localStorage.getItem('vaultiac_token') && !!getCurrentUsername();
+  document.getElementById('analyzeWrap').style.display = isLoggedIn ? 'block' : 'none';
+  document.getElementById('guestGate').style.display = isLoggedIn ? 'none' : 'block';
+}
+
+// ===== FILE UPLOAD =====
+let selectedFile = null;
+let selectedDataURL = null;
+
+const fileInput = document.getElementById('fileInput');
+const uploadCard = document.getElementById('uploadCard');
+const uploadPrompt = document.getElementById('uploadPrompt');
+const uploadPreview = document.getElementById('uploadPreview');
+const previewImg = document.getElementById('previewImg');
+const previewName = document.getElementById('previewName');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+document.getElementById('uploadTrigger').addEventListener('click', function(e) {
+  e.stopPropagation();
+  fileInput.click();
+});
+
+uploadCard.addEventListener('click', function() {
+  if (!selectedFile) fileInput.click();
+});
+
+fileInput.addEventListener('change', function() {
+  if (this.files && this.files[0]) handleFile(this.files[0]);
+});
+
+// Drag and drop
+uploadCard.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.classList.add('drag-over');
+});
+uploadCard.addEventListener('dragleave', function() {
+  this.classList.remove('drag-over');
+});
+uploadCard.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) return;
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedDataURL = e.target.result;
+    previewImg.src = selectedDataURL;
+    previewName.textContent = file.name;
+    uploadPrompt.style.display = 'none';
+    uploadPreview.style.display = 'block';
+    uploadCard.classList.add('has-image');
+    analyzeBtn.disabled = false;
+    hideResults();
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('removeBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  resetUpload();
+});
+
+document.getElementById('tryAgainBtn').addEventListener('click', function() {
+  resetUpload();
+  hideResults();
+});
+
+function resetUpload() {
+  selectedFile = null;
+  selectedDataURL = null;
+  fileInput.value = '';
+  previewImg.src = '';
+  previewName.textContent = '';
+  uploadPrompt.style.display = 'block';
+  uploadPreview.style.display = 'none';
+  uploadCard.classList.remove('has-image');
+  analyzeBtn.disabled = true;
+}
+
+function hideResults() {
+  document.getElementById('resultsPanel').classList.remove('show');
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('errorState').classList.remove('show');
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'none';
+}
+
+// ===== GRADE ANALYSIS =====
+analyzeBtn.addEventListener('click', async function() {
+  if (!selectedDataURL) return;
+  const token = localStorage.getItem('vaultiac_token');
+  if (!token) {
+    window.vaultiacOpenAuth('signup');
+    return;
+  }
+
+  this.disabled = true;
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('resultsPanel').classList.remove('show');
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('errorState').classList.remove('show');
+  document.getElementById('errorState').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/grader/analyze', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ image: selectedDataURL })
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || json.error) {
+      throw new Error(json.error || 'Analysis failed');
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+    renderResults(json);
+  } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorState').classList.add('show');
+    document.getElementById('errorMsg').textContent = e.message || 'Make sure the card is clearly visible and try again.';
+    this.disabled = false;
+  }
+});
+
+function gradeClass(grade) {
+  const n = parseFloat(grade);
+  if (n >= 8.5) return 'grade-high';
+  if (n >= 6) return 'grade-mid';
+  return 'grade-low';
+}
+
+function barClass(score) {
+  if (score >= 8.5) return 'bar-high';
+  if (score >= 6) return 'bar-mid';
+  return 'bar-low';
+}
+
+const PSA_LABELS = {
+  10: 'Gem Mint', 9: 'Mint', 8: 'Near Mint-Mint', 7: 'Near Mint',
+  6: 'Excellent-Mint', 5: 'Excellent', 4: 'Very Good-Excellent',
+  3: 'Very Good', 2: 'Good', 1: 'Poor'
+};
+
+const CGC_LABELS = {
+  10: 'Pristine', 9.5: 'Gem Mint', 9: 'Mint', 8.5: 'Near Mint-Mint',
+  8: 'Near Mint-Mint', 7.5: 'Near Mint', 7: 'Near Mint',
+  6.5: 'Excellent-Mint', 6: 'Excellent-Mint', 5.5: 'Excellent',
+  5: 'Excellent', 4: 'Very Good', 3: 'Good', 2: 'Fair', 1: 'Poor'
+};
+
+const TAG_LABELS = {
+  10: 'Perfect', 9: 'Gem Mint', 8: 'Near Mint-Mint', 7: 'Near Mint',
+  6: 'Excellent-Mint', 5: 'Excellent', 4: 'Very Good',
+  3: 'Good', 2: 'Fair', 1: 'Poor'
+};
+
+function renderResults(data) {
+  document.getElementById('resultsCardName').textContent = data.card_name || 'Your Card';
+
+  const psaGrade = data.psa_grade;
+  document.getElementById('gradePSA').textContent = psaGrade;
+  document.getElementById('labelPSA').textContent = PSA_LABELS[psaGrade] || '';
+  document.getElementById('gcPSA').className = 'grade-card ' + gradeClass(psaGrade);
+
+  const cgcGrade = data.cgc_grade;
+  document.getElementById('gradeCGC').textContent = cgcGrade;
+  document.getElementById('labelCGC').textContent = CGC_LABELS[cgcGrade] || '';
+  document.getElementById('gcCGC').className = 'grade-card ' + gradeClass(cgcGrade);
+
+  const tagGrade = data.tag_grade;
+  document.getElementById('gradeTAG').textContent = tagGrade;
+  document.getElementById('labelTAG').textContent = TAG_LABELS[tagGrade] || '';
+  document.getElementById('gcTAG').className = 'grade-card ' + gradeClass(tagGrade);
+
+  const attrs = data.attributes || {};
+  ['centering','corners','edges','surface'].forEach(attr => {
+    const score = attrs[attr] || 0;
+    const pct = (score / 10) * 100;
+    const cap = attr.charAt(0).toUpperCase() + attr.slice(1);
+    const bar = document.getElementById('bar' + cap);
+    const scoreEl = document.getElementById('score' + cap);
+    if (bar) { bar.style.width = pct + '%'; bar.className = 'attr-bar ' + barClass(score); }
+    if (scoreEl) scoreEl.textContent = score.toFixed(1);
+  });
+
+  document.getElementById('analysisNotes').textContent = data.notes || '';
+  document.getElementById('graderInsight').textContent = data.grader_insight || '';
+
+  const panel = document.getElementById('resultsPanel');
+  panel.style.display = 'block';
+  panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  document.getElementById('analyzeBtn').disabled = false;
+}
+
+// ===== INIT =====
+window.addEventListener('load', initAuthState);
+</script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

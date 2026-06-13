@@ -711,19 +711,6 @@ async function copyInvite(){
   setTimeout(()=>c.classList.remove('show'),3500);
 }
 
-// Build activity calendar — last 30 days
-(function(){
-  const cal=document.getElementById('activityCal');
-  const results=['c','c','w','c','c','c','e','c','c','w','c','c','c','c','e','e','c','c','c','w','c','c','c','c','c','e','c','c','c','t'];
-  results.forEach((r,i)=>{
-    const d=document.createElement('div');
-    const day=30-results.length+i+1;
-    d.className='ac-day '+(r==='c'?'ac-correct':r==='w'?'ac-wrong':r==='t'?'ac-today':'ac-empty');
-    d.textContent=day;
-    cal.appendChild(d);
-  });
-})();
-
 // Category filter
 document.querySelectorAll('.cf-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{

@@ -270,7 +270,13 @@ let PUZZLE = null;
 let currentClue = 1;
 let maxPoints = 6;
 let gameOver = false;
-let username = localStorage.getItem('vaultiac_username') || 'Player';
+function getCurrentUsername() {
+  try {
+    const u = JSON.parse(localStorage.getItem('vaultiac_user'));
+    return (u && u.username) ? u.username : 'Player';
+  } catch(e) { return 'Player'; }
+}
+let username = getCurrentUsername();
 
 function getCurrentPeriod() {
   // Reset at midnight — period key is today's calendar date
@@ -292,7 +298,7 @@ async function loadDailyTrivia() {
   // For logged-in users: check server (source of truth)
   // For guests: check localStorage
   const currentPeriod = getCurrentPeriod();
-  const currentUsername = localStorage.getItem('vaultiac_username');
+  const currentUsername = getCurrentUsername();
   const isLoggedIn = currentUsername && currentUsername !== 'Player';
 
   let alreadyPlayed = false;
@@ -592,6 +598,13 @@ function showResult(won, pts) {
       `All 6 clues used. Better luck tomorrow!`;
   }
 
+  // Hide save-streak CTA if already logged in
+  const saveCta = panel.querySelector('.save-cta');
+  const skipLink = panel.querySelector('.skip-link');
+  if (getCurrentUsername() !== 'Player') {
+    if (saveCta) saveCta.style.display = 'none';
+    if (skipLink) skipLink.style.display = 'none';
+  }
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 

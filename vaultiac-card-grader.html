@@ -513,8 +513,9 @@ function handleFront(file) {
       alert('Could not load this photo. Please try a different image.');
       return;
     }
-    // If mobile Safari returns empty type, patch the data URL to image/jpeg
-    frontDataURL = result.startsWith('data:;') || result.startsWith('data:application/')
+    // If mobile Safari returns completely empty type (data:;base64,...), patch to image/jpeg
+    // Do NOT patch image/heic — let the server convert it properly
+    frontDataURL = result.startsWith('data:;') || result.startsWith('data:application/octet-stream')
       ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
       : result;
     document.getElementById('frontImg').src = frontDataURL;
@@ -578,7 +579,8 @@ function handleBack(file) {
       alert('Could not load this photo. Please try a different image.');
       return;
     }
-    backDataURL = result.startsWith('data:;') || result.startsWith('data:application/')
+    // Do NOT patch image/heic — let the server convert it properly
+    backDataURL = result.startsWith('data:;') || result.startsWith('data:application/octet-stream')
       ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
       : result;
     document.getElementById('backImg').src = backDataURL;

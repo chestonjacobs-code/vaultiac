@@ -102,6 +102,12 @@ router.post('/analyze', requireAuth, async (req, res) => {
     try {
       front.base64Data = await convertHeicToJpeg(front.base64Data);
       front.mediaType = 'image/jpeg';
+      // Verify JPEG magic bytes (FF D8)
+      const magic = Buffer.from(front.base64Data.slice(0, 4), 'base64');
+      if (magic[0] !== 0xFF || magic[1] !== 0xD8) {
+        console.error('[grader] HEIC conversion produced non-JPEG output');
+        return res.status(400).json({ error: 'Could not process this photo format. Please try a different image.' });
+      }
     } catch(e) {
       return res.status(400).json({ error: e.message });
     }
@@ -117,6 +123,11 @@ router.post('/analyze', requireAuth, async (req, res) => {
       try {
         back.base64Data = await convertHeicToJpeg(back.base64Data);
         back.mediaType = 'image/jpeg';
+        const magic = Buffer.from(back.base64Data.slice(0, 4), 'base64');
+        if (magic[0] !== 0xFF || magic[1] !== 0xD8) {
+          console.error('[grader] HEIC conversion produced non-JPEG output (back)');
+          return res.status(400).json({ error: 'Could not process the back photo format. Please try a different image.' });
+        }
       } catch(e) {
         return res.status(400).json({ error: e.message });
       }

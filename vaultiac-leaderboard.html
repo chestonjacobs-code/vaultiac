@@ -668,6 +668,56 @@ async function renderFriendsList() {
         </div>`;
       fl.appendChild(row);
     });
+
+    // Always show invite link at bottom of friends list
+    const invRow = document.createElement('div');
+    invRow.style.cssText = 'margin-top:16px;text-align:center;';
+    invRow.innerHTML = `
+      <button id="friendsInviteBtn" style="font-family:inherit;font-size:13px;font-weight:700;color:#9a93a6;
+        background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);border-radius:12px;
+        padding:12px 20px;cursor:pointer;width:100%;transition:.2s;"
+        onmouseover="this.style.color='#f3eee6';this.style.borderColor='rgba(255,255,255,.25)'"
+        onmouseout="this.style.color='#9a93a6';this.style.borderColor='rgba(255,255,255,.12)'">
+        🔗 Copy invite link to add more friends
+      </button>
+      <div id="friendsInviteConfirm" style="font-size:12px;color:#7ce8d6;height:18px;margin-top:6px;opacity:0;transition:.2s;"></div>
+    `;
+    fl.appendChild(invRow);
+    document.getElementById('friendsInviteBtn').addEventListener('click', async function() {
+      this.textContent = '⏳ Generating link…';
+      this.disabled = true;
+      const confirmEl = document.getElementById('friendsInviteConfirm');
+      try {
+        const tok = VaultAuth.getToken();
+        const r2 = await fetch('/api/friends/invite', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }
+        });
+        const d2 = await r2.json();
+        if (!r2.ok || !d2.token) throw new Error('Could not get link');
+        const link = 'https://vaultiac.com/vaultiac-leaderboard.html?invite=' + d2.token;
+        try { await navigator.clipboard.writeText(link); }
+        catch(e2) {
+          const inp = document.createElement('input');
+          inp.style.cssText = 'position:fixed;opacity:0;';
+          inp.value = link;
+          document.body.appendChild(inp);
+          inp.focus(); inp.select();
+          document.execCommand('copy');
+          document.body.removeChild(inp);
+        }
+        confirmEl.textContent = '✓ Link copied!';
+        confirmEl.style.opacity = '1';
+        setTimeout(() => { confirmEl.style.opacity = '0'; }, 3000);
+      } catch(e3) {
+        confirmEl.textContent = 'Could not copy link — try again';
+        confirmEl.style.opacity = '1';
+        confirmEl.style.color = '#f08080';
+        setTimeout(() => { confirmEl.style.opacity = '0'; }, 3000);
+      }
+      this.textContent = '🔗 Copy invite link to add more friends';
+      this.disabled = false;
+    });
   } catch (e) {
     fl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Could not load friends leaderboard.</div>';
   }
@@ -837,7 +887,7 @@ async function showAddFriendPrompt(token) {
     const res = await fetch('/api/friends/invite-info/' + encodeURIComponent(token));
     const json = await res.json();
     if (res.ok && json.username) {
-      if (!document.querySelector('[data-main="friends"]')?.classList.contains('active')) {
+      if (mainTab !== 'friends') {
         switchMain('friends');
       }
       showAddFriendBanner(json.username, token);

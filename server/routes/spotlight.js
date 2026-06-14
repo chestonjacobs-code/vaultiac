@@ -1,17 +1,43 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { requireAuth } = require('./auth');
 const router = express.Router();
 
-// Try canvas, fall back to @napi-rs/canvas
-let createCanvas, loadImage;
+// Load canvas
+let createCanvas, loadImage, registerFont;
 try {
   const canvas = require('canvas');
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
+  registerFont = canvas.registerFont;
 } catch(e) {
   const canvas = require('@napi-rs/canvas');
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
+  registerFont = canvas.registerFont;
+}
+
+// Register bundled fonts — Railway has no system fonts
+const FONTS_DIR = path.join(__dirname, '../../public/fonts');
+const FONT_DEFS = [
+  { file: 'Inter-Regular.ttf', family: 'Inter', weight: 'normal' },
+  { file: 'Inter-Bold.ttf',    family: 'Inter', weight: 'bold'   },
+  { file: 'Inter.ttf',         family: 'Inter', weight: 'normal' },
+];
+let FONT_FAMILY = 'Arial, sans-serif'; // fallback if no font file found
+for (const f of FONT_DEFS) {
+  const fp = path.join(FONTS_DIR, f.file);
+  if (fs.existsSync(fp)) {
+    try {
+      registerFont(fp, { family: f.family, weight: f.weight });
+      FONT_FAMILY = 'Inter, Arial, sans-serif';
+      console.log('[spotlight] Font registered:', f.file);
+    } catch(e) {
+      console.warn('[spotlight] Font register error:', e.message);
+    }
+    break;
+  }
 }
 
 // Background color presets — static gradients for server-side render
@@ -117,12 +143,12 @@ router.post('/render', requireAuth, async (req, res) => {
 
   // ---- BRAND ----
   ctx.fillStyle = '#e8c27a';
-  ctx.font = 'bold 22px Georgia, serif';
+  ctx.font = `bold 22px ${FONT_FAMILY}`;
   ctx.textAlign = 'left';
   ctx.fillText('VAULTIAC', 28, 52);
 
   ctx.fillStyle = 'rgba(154,147,166,0.7)';
-  ctx.font = '11px Arial, sans-serif';
+  ctx.font = `11px ${FONT_FAMILY}`;
   ctx.textAlign = 'right';
   ctx.fillText('card spotlight', W - 28, 52);
 
@@ -131,12 +157,12 @@ router.post('/render', requireAuth, async (req, res) => {
   const bigline = caption_big || 'Just Pulled It.';
 
   ctx.fillStyle = '#e8c27a';
-  ctx.font = '700 12px Arial, sans-serif';
+  ctx.font = `700 12px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
   ctx.fillText(eyebrow.toUpperCase(), W/2, 106);
 
   ctx.fillStyle = '#f3eee6';
-  ctx.font = 'bold 40px Georgia, serif';
+  ctx.font = `bold 40px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
   ctx.fillText(bigline, W/2, 152);
 
@@ -184,7 +210,7 @@ router.post('/render', requireAuth, async (req, res) => {
       ctx.fillStyle = ph;
       ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.font = 'bold 36px Georgia, serif';
+      ctx.font = `bold 36px ${FONT_FAMILY}`;
       ctx.textAlign = 'center';
       ctx.fillText('✦', W/2, cardY + cardH/2 + 12);
       ctx.restore();
@@ -198,7 +224,7 @@ router.post('/render', requireAuth, async (req, res) => {
     ctx.fillStyle = ph;
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = 'bold 36px Georgia, serif';
+    ctx.font = `bold 36px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
     ctx.fillText('✦', W/2, cardY + cardH/2 + 12);
     ctx.restore();
@@ -208,7 +234,7 @@ router.post('/render', requireAuth, async (req, res) => {
   const metaY = cardY + cardH + 28;
 
   ctx.fillStyle = '#f3eee6';
-  ctx.font = 'bold 26px Georgia, serif';
+  ctx.font = `bold 26px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
   let displayName = card_name;
   if (displayName.length > 24) displayName = displayName.slice(0, 22) + '…';
@@ -217,7 +243,7 @@ router.post('/render', requireAuth, async (req, res) => {
   const subParts = [card_set, card_number, card_rarity].filter(Boolean);
   if (subParts.length > 0) {
     ctx.fillStyle = 'rgba(154,147,166,0.8)';
-    ctx.font = '13px Arial, sans-serif';
+    ctx.font = `13px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
     let subText = subParts.join(' · ');
     if (subText.length > 40) subText = subText.slice(0, 38) + '…';
@@ -229,7 +255,7 @@ router.post('/render', requireAuth, async (req, res) => {
     const priceY = metaY + 72;
 
     ctx.fillStyle = 'rgba(154,147,166,0.7)';
-    ctx.font = '700 10px Arial, sans-serif';
+    ctx.font = `700 10px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
     ctx.fillText('MARKET VALUE', W/2, priceY - 16);
 
@@ -237,7 +263,7 @@ router.post('/render', requireAuth, async (req, res) => {
     priceGrad.addColorStop(0, '#ffffff');
     priceGrad.addColorStop(1, '#e8c27a');
     ctx.fillStyle = priceGrad;
-    ctx.font = 'bold 52px Georgia, serif';
+    ctx.font = `bold 52px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
     ctx.fillText(price, W/2, priceY + 36);
 
@@ -247,7 +273,7 @@ router.post('/render', requireAuth, async (req, res) => {
       const trendBg     = trend_up ? 'rgba(124,232,214,0.1)' : 'rgba(240,100,100,0.1)';
       const trendBorder = trend_up ? 'rgba(124,232,214,0.28)' : 'rgba(240,100,100,0.28)';
 
-      ctx.font = '700 13px Arial, sans-serif';
+      ctx.font = `700 13px ${FONT_FAMILY}`;
       ctx.textAlign = 'center';
       const trendW = ctx.measureText(trendText).width + 28;
       const trendX = W/2 - trendW/2;
@@ -278,13 +304,13 @@ router.post('/render', requireAuth, async (req, res) => {
 
   const displayUser = username ? '@' + username : '@vaultiac';
   ctx.fillStyle = '#f3eee6';
-  ctx.font = '700 13px Arial, sans-serif';
+  ctx.font = `700 13px ${FONT_FAMILY}`;
   ctx.textAlign = 'left';
   ctx.fillText(displayUser + ' · pulled this', 28, footY);
 
   const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
   ctx.fillStyle = 'rgba(154,147,166,0.7)';
-  ctx.font = '12px Arial, sans-serif';
+  ctx.font = `12px ${FONT_FAMILY}`;
   ctx.textAlign = 'right';
   ctx.fillText(dateStr, W - 28, footY);
 

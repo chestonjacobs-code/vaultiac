@@ -783,88 +783,160 @@ document.querySelectorAll('.cf-btn').forEach(btn=>{
 let pendingFriendRequest = null;
 
 // Handle ?invite=TOKEN and ?tab=friends on page load
+// Handle ?invite=TOKEN and ?tab=friends on page load
 (async function handlePageParams() {
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
   const tabParam = params.get('tab');
 
   // Strip params from URL
-  const cleanUrl = window.location.pathname;
-  history.replaceState(null, '', cleanUrl);
+  history.replaceState(null, '', window.location.pathname);
 
   // Switch to friends tab if requested
   if (tabParam === 'friends') {
     switchMain('friends');
   }
 
-  // Check sessionStorage for a pending friend request from post-auth redirect
+  // Handle fresh ?invite=TOKEN
+  if (inviteToken) {
+    sessionStorage.setItem('pending_invite_token', inviteToken);
+
+    const user = await VaultAuth.getUser();
+    if (!user) {
+      showToast('Sign in to add this person as a friend.');
+      return;
+    }
+
+    await showAddFriendPrompt(inviteToken);
+  }
+
+  // Check sessionStorage for invite token stored from pre-auth redirect
+  const storedToken = sessionStorage.getItem('pending_invite_token');
+  if (storedToken && !inviteToken) {
+    const user = await VaultAuth.getUser();
+    if (user) {
+      sessionStorage.removeItem('pending_invite_token');
+      await showAddFriendPrompt(storedToken);
+    }
+  }
+
+  // Check sessionStorage for pending_friend_request (from auth.js redirect)
   const storedRequest = sessionStorage.getItem('pending_friend_request');
   if (storedRequest) {
     sessionStorage.removeItem('pending_friend_request');
     try {
       const req = JSON.parse(storedRequest);
-      // Fetch pending list to get the real request ID
-      const token = VaultAuth.getToken();
-      if (token) {
-        const res = await fetch('/api/friends/pending', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const json = await res.json();
-        const match = (json.data || []).find(r => r.from_username === req.from_username);
-        if (match) {
-          if (tabParam !== 'friends') switchMain('friends');
-          showFriendRequestBanner(match.from_username, match.id);
-        } else {
-          if (tabParam !== 'friends') switchMain('friends');
-        }
-      }
-    } catch (e) { /* silent */ }
-    return;
+      if (tabParam !== 'friends') switchMain('friends');
+      showAddFriendBanner(req.from_username, null);
+    } catch(e) { /* silent */ }
   }
-
-  // Handle fresh ?invite=TOKEN (user was already logged in when they clicked the link)
-  if (!inviteToken) return;
-
-  const user = await VaultAuth.getUser();
-
-  if (!user) {
-    sessionStorage.setItem('pending_invite', inviteToken);
-    showToast('Sign in or create a free account to join your friend\'s leaderboard.');
-    return;
-  }
-
-  await processPendingInvite(inviteToken);
 })();
 
-async function processPendingInvite(token) {
+async function showAddFriendPrompt(token) {
   try {
-    const res = await fetch('/api/friends/request/' + encodeURIComponent(token), {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + VaultAuth.getToken(), 'Content-Type': 'application/json' }
-    });
+    const res = await fetch('/api/friends/invite-info/' + encodeURIComponent(token));
     const json = await res.json();
-
-    if (json.status === 'already_friends') {
-      showToast('You\'re already friends with this person.');
-      switchMain('friends');
-      return;
+    if (res.ok && json.username) {
+      if (!document.querySelector('[data-main="friends"]')?.classList.contains('active')) {
+        switchMain('friends');
+      }
+      showAddFriendBanner(json.username, token);
     }
-
-    if (res.ok && json.status === 'pending') {
-      switchMain('friends');
-      // Fetch pending to get real request ID
-      const pendingRes = await fetch('/api/friends/pending', {
-        headers: { 'Authorization': 'Bearer ' + VaultAuth.getToken() }
-      });
-      const pendingJson = await pendingRes.json();
-      const match = (pendingJson.data || []).find(r => r.from_username === json.from_username);
-      showFriendRequestBanner(json.from_username, match ? match.id : null);
-    } else {
-      showToast(json.error || 'Could not process invite.');
-    }
-  } catch (e) {
-    showToast('Could not process invite link.');
+  } catch(e) {
+    showToast('Could not load invite. Please try the link again.');
   }
+}
+
+function showAddFriendBanner(fromUsername, token) {
+  const existing = document.getElementById('addFriendBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'addFriendBanner';
+  banner.style.cssText = `
+    width:100%;max-width:480px;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+    background:linear-gradient(155deg,#1a1628,#0d0b12);border:1px solid rgba(167,139,250,.35);
+    position:relative;z-index:2;animation:rise .4s ease forwards;
+  `;
+  banner.innerHTML = `
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:#f3eee6;">@${fromUsername} wants to be friends</div>
+    <div style="font-size:12px;color:#9a93a6;margin-bottom:14px;">Accept to compete on a private leaderboard together.</div>
+    <div style="display:flex;gap:8px;">
+      <button id="addFriendAccept" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#0c0a10;
+        background:linear-gradient(90deg,#a78bfa,#f0a6c8);border:none;border-radius:10px;padding:10px;cursor:pointer;">
+        Add Friend
+      </button>
+      <button id="addFriendDecline" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#9a93a6;
+        background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;cursor:pointer;">
+        Decline
+      </button>
+    </div>
+  `;
+
+  const friendsContent = document.getElementById('friendsContent') || document.querySelector('.friends-panel') || document.querySelector('[data-main="friends"]');
+  if (friendsContent) {
+    friendsContent.insertBefore(banner, friendsContent.firstChild);
+  } else {
+    const tabs = document.querySelector('.tabs');
+    if (tabs) tabs.insertAdjacentElement('afterend', banner);
+  }
+
+  document.getElementById('addFriendAccept').addEventListener('click', async () => {
+    const btn = document.getElementById('addFriendAccept');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+
+    try {
+      const authToken = VaultAuth.getToken();
+      const reqRes = await fetch('/api/friends/request/' + encodeURIComponent(token || ''), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' }
+      });
+      const reqJson = await reqRes.json();
+
+      if (reqJson.status === 'already_friends') {
+        banner.remove();
+        showToast('You are already friends with @' + fromUsername);
+        loadFriendsTab();
+        return;
+      }
+
+      if (reqRes.ok && reqJson.status === 'pending') {
+        const pendingRes = await fetch('/api/friends/pending', {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const pendingJson = await pendingRes.json();
+        const match = (pendingJson.data || []).find(r => r.from_username === fromUsername);
+
+        if (match) {
+          const acceptRes = await fetch('/api/friends/respond', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ request_id: match.id, action: 'accept' })
+          });
+          if (acceptRes.ok) {
+            banner.remove();
+            showToast('@' + fromUsername + ' added to your friend leaderboard!');
+            loadFriendsTab();
+            return;
+          }
+        }
+      }
+
+      banner.remove();
+      showToast('@' + fromUsername + ' added!');
+      loadFriendsTab();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Add Friend';
+      showToast('Something went wrong. Try again.');
+    }
+  });
+
+  document.getElementById('addFriendDecline').addEventListener('click', () => {
+    banner.remove();
+    showToast('Request declined.');
+  });
 }
 
 function showFriendRequestBanner(fromUsername, requestId) {

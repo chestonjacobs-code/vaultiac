@@ -60,6 +60,36 @@ async function convertHeicToJpeg(base64Data) {
   }
 }
 
+// TEMPORARY DEBUG ENDPOINT — remove after HEIC diagnosis
+router.post('/debug', requireAuth, async (req, res) => {
+  const { front_image, back_image } = req.body;
+  const report = {};
+
+  function inspect(dataUrl, label) {
+    if (!dataUrl) return { present: false };
+    const prefix = dataUrl.slice(0, 80);
+    const m = dataUrl.match(/^data:([^;]+);base64,/);
+    return {
+      present: true,
+      length: dataUrl.length,
+      prefix,
+      detectedMime: m ? m[1] : 'NO MATCH',
+      startsWithDataColon: dataUrl.startsWith('data:'),
+      startsWithDataSemicolon: dataUrl.startsWith('data:;'),
+      startsWithDataApplication: dataUrl.startsWith('data:application/'),
+      startsWithDataImageHeic: dataUrl.startsWith('data:image/heic'),
+      startsWithDataImageJpeg: dataUrl.startsWith('data:image/jpeg'),
+    };
+  }
+
+  report.front = inspect(front_image, 'front');
+  report.back = inspect(back_image, 'back');
+
+  console.log('[grader/debug]', JSON.stringify(report, null, 2));
+  return res.json(report);
+});
+// END TEMPORARY DEBUG ENDPOINT
+
 router.post('/analyze', requireAuth, async (req, res) => {
   const { front_image, back_image, image } = req.body;
   const frontRaw = front_image || image;

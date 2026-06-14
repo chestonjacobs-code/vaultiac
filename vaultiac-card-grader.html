@@ -319,6 +319,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- ANALYZE BUTTON (logged-in users) -->
 <div class="analyze-wrap" id="analyzeWrap" style="display:none;">
   <button class="analyze-btn" id="analyzeBtn" disabled>Grade this card</button>
+<button style="width:100%;margin-top:8px;padding:10px;background:#333;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:13px;cursor:pointer;" onclick="debugUpload()">DEBUG: Log MIME type</button>
 </div>
 
 <!-- GUEST GATE (guests) -->
@@ -619,6 +620,23 @@ function hideResults() {
 }
 
 // ===== ANALYZE =====
+// TEMPORARY DEBUG FUNCTION
+async function debugUpload() {
+  if (!frontDataURL) { alert('Select a front photo first.'); return; }
+  const token = localStorage.getItem('vaultiac_token');
+  if (!token) { alert('Log in first.'); return; }
+  const body = { front_image: frontDataURL };
+  if (backDataURL) body.back_image = backDataURL;
+  const res = await fetch('/api/grader/debug', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const json = await res.json();
+  alert(JSON.stringify(json.front, null, 2));
+}
+// END TEMPORARY DEBUG FUNCTION
+
 analyzeBtn.addEventListener('click', async function() {
   if (!frontDataURL) {
     alert('Please select a front photo first.');

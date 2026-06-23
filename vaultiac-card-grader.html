@@ -357,23 +357,19 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <div class="grade-card" id="gcPSA">
       <div class="gc-company">PSA</div>
       <div class="gc-grade" id="gradePSA">—</div>
-      <div class="gc-label" id="labelPSA">—</div>
     </div>
     <div class="grade-card" id="gcCGC">
       <div class="gc-company">CGC</div>
       <div class="gc-grade" id="gradeCGC">—</div>
-      <div class="gc-label" id="labelCGC">—</div>
       <div class="gc-sub">half-point scale</div>
     </div>
     <div class="grade-card" id="gcTAG">
       <div class="gc-company">TAG</div>
       <div class="gc-grade" id="gradeTAG">—</div>
-      <div class="gc-label" id="labelTAG">—</div>
     </div>
     <div class="grade-card" id="gcBGS">
       <div class="gc-company">BGS</div>
       <div class="gc-grade" id="gradeBGS">—</div>
-      <div class="gc-label" id="labelBGS">—</div>
       <div class="gc-sub">half-point scale</div>
     </div>
   </div>
@@ -685,10 +681,6 @@ function barClass(score) {
   if (score >= 6) return 'bar-mid';
   return 'bar-low';
 }
-const PSA_LABELS = {10:'Gem Mint',9:'Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good-Excellent',3:'Very Good',2:'Good',1:'Poor'};
-const CGC_LABELS = {10:'Pristine',9.5:'Gem Mint',9:'Mint',8.5:'Near Mint-Mint',8:'Near Mint-Mint',7.5:'Near Mint',7:'Near Mint',6.5:'Excellent-Mint',6:'Excellent-Mint',5.5:'Excellent',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
-const TAG_LABELS = {10:'Perfect',9:'Gem Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
-const BGS_LABELS = {10:'Pristine',9.5:'Gem Mint',9:'Mint',8.5:'Near Mint-Mint',8:'Near Mint-Mint',7.5:'Near Mint',7:'Near Mint',6.5:'Excellent-Mint',6:'Excellent-Mint',5.5:'Excellent',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
 
 // ===== RENDER RESULTS =====
 function renderResults(data) {
@@ -696,22 +688,18 @@ function renderResults(data) {
 
   const psaGrade = data.psa_grade;
   document.getElementById('gradePSA').textContent = psaGrade;
-  document.getElementById('labelPSA').textContent = PSA_LABELS[psaGrade] || '';
   document.getElementById('gcPSA').className = 'grade-card ' + gradeClass(psaGrade);
 
   const cgcGrade = data.cgc_grade;
   document.getElementById('gradeCGC').textContent = cgcGrade;
-  document.getElementById('labelCGC').textContent = CGC_LABELS[cgcGrade] || '';
   document.getElementById('gcCGC').className = 'grade-card ' + gradeClass(cgcGrade);
 
   const tagGrade = data.tag_grade;
   document.getElementById('gradeTAG').textContent = tagGrade;
-  document.getElementById('labelTAG').textContent = TAG_LABELS[tagGrade] || '';
   document.getElementById('gcTAG').className = 'grade-card ' + gradeClass(tagGrade);
 
   const bgsGrade = data.bgs_grade;
   document.getElementById('gradeBGS').textContent = bgsGrade;
-  document.getElementById('labelBGS').textContent = BGS_LABELS[bgsGrade] || '';
   document.getElementById('gcBGS').className = 'grade-card ' + gradeClass(bgsGrade);
 
   const attrs = data.attributes || {};

@@ -351,6 +351,12 @@ section{position:relative;z-index:2;width:100%;max-width:1100px;margin:0 auto;pa
 .pack-grader .pack-bottom{background:linear-gradient(90deg,#141006,#221a04);}
 .pack-grader .pack-art{background:radial-gradient(circle at 50% 40%,#3a2c08,#1a1402 70%);}
 
+.pack-friends .pack-front{background:linear-gradient(160deg,#1a1206,#2a1e08 40%,#161002);}
+.pack-friends .pack-top{background:linear-gradient(90deg,#7a4a08,#d08820,#f5a623,#d08820,#7a4a08);color:#080400;}
+.pack-friends .pack-bottom{background:linear-gradient(90deg,#141006,#221a04);}
+.pack-friends .pack-art{background:radial-gradient(circle at 50% 40%,#3a2808,#1a1002 70%);}
+.pack-friends.pack-wrap:not(.pack-soon) .pack::after{background:radial-gradient(circle,rgba(245,166,35,.25),transparent 70%);}
+
 /* pack canvas fills art area */
 .pack-canvas{width:100%;height:100%;display:block;}
 .pack-wrap:not(.pack-soon) .pack::after{
@@ -844,7 +850,7 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
       </div>
     </div>
 
-    <!-- CARD GRADER — soon -->
+    <!-- CARD GRADER — live -->
     <div class="pack-wrap pack-grader reveal" data-href="vaultiac-card-grader.html">
       <div class="pack">
         <div class="pack-front">
@@ -858,6 +864,23 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
         <div class="pack-name">Card Grader</div>
         <div class="pack-status"><span class="live-badge">● Live</span></div>
         <div class="pack-desc">Upload any card — AI estimates PSA, CGC, TAG, and Beckett grades instantly.</div>
+      </div>
+    </div>
+
+    <!-- FRIENDS — live -->
+    <div class="pack-wrap pack-friends reveal" data-href="vaultiac-friends.html">
+      <div class="pack">
+        <div class="pack-front">
+          <div class="pack-top">VAULTIAC</div>
+          <div class="pack-tear"></div>
+          <div class="pack-art"><canvas class="pack-canvas" id="pack-friends" width="160" height="180"></canvas></div>
+          <div class="pack-bottom" style="color:#f5a623;">Friends</div>
+        </div>
+      </div>
+      <div class="pack-label">
+        <div class="pack-name">Friends</div>
+        <div class="pack-status"><span class="live-badge">● Live</span></div>
+        <div class="pack-desc">Invite friends, compare streaks, and compete on a private leaderboard.</div>
       </div>
     </div>
 
@@ -1476,9 +1499,56 @@ function drawPackGrader(){
   x.fillStyle=gl; x.fillRect(0,0,W,H);
 }
 
+function drawPackFriends(){
+  const c=document.getElementById('pack-friends');
+  if(!c) return;
+  const x=c.getContext('2d'), W=c.width, H=c.height;
+  // warm amber bg
+  const bg=x.createRadialGradient(W/2,H*.4,0,W/2,H*.5,W*.9);
+  bg.addColorStop(0,'#2a1c04'); bg.addColorStop(.6,'#150e02'); bg.addColorStop(1,'#060400');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+
+  // left avatar card — tilted left
+  x.save(); x.translate(W*.38,H*.46); x.rotate(-.12);
+  const cw=44,ch=60;
+  x.shadowColor='rgba(0,0,0,.7)'; x.shadowBlur=16; x.shadowOffsetY=8;
+  _rrect(x,-cw/2,-ch/2,cw,ch,5);
+  const lg=x.createLinearGradient(-cw/2,-ch/2,cw/2,ch/2);
+  lg.addColorStop(0,'#d08820'); lg.addColorStop(.5,'#f5a623'); lg.addColorStop(1,'#b07010');
+  x.fillStyle=lg; x.fill(); x.shadowBlur=0; x.shadowOffsetY=0;
+  _rrect(x,-cw/2+3,-ch/2+3,cw-6,ch-6,3);
+  const li=x.createLinearGradient(0,-ch/2,0,ch/2);
+  li.addColorStop(0,'#1a2840'); li.addColorStop(1,'#0e1828'); x.fillStyle=li; x.fill();
+  x.fillStyle='rgba(245,166,35,.5)'; x.font='18px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('★',0,-4);
+  x.restore();
+
+  // right avatar card — tilted right
+  x.save(); x.translate(W*.62,H*.46); x.rotate(.12);
+  x.shadowColor='rgba(0,0,0,.7)'; x.shadowBlur=16; x.shadowOffsetY=8;
+  _rrect(x,-cw/2,-ch/2,cw,ch,5);
+  const rg=x.createLinearGradient(-cw/2,-ch/2,cw/2,ch/2);
+  rg.addColorStop(0,'#c07818'); rg.addColorStop(.5,'#e89820'); rg.addColorStop(1,'#a06010');
+  x.fillStyle=rg; x.fill(); x.shadowBlur=0; x.shadowOffsetY=0;
+  _rrect(x,-cw/2+3,-ch/2+3,cw-6,ch-6,3);
+  const ri=x.createLinearGradient(0,-ch/2,0,ch/2);
+  ri.addColorStop(0,'#281830'); ri.addColorStop(1,'#180e20'); x.fillStyle=ri; x.fill();
+  x.fillStyle='rgba(245,166,35,.5)'; x.font='18px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('★',0,-4);
+  x.restore();
+
+  // glow between the two cards
+  const mg=x.createRadialGradient(W/2,H*.46,0,W/2,H*.46,W*.35);
+  mg.addColorStop(0,'rgba(245,166,35,.18)'); mg.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=mg; x.fillRect(0,0,W,H);
+
+  // small sparkles
+  [[W*.25,H*.22],[W*.75,H*.2],[W*.5,H*.78],[W*.18,H*.6],[W*.82,H*.58]].forEach(([sx,sy])=>{
+    x.fillStyle='rgba(245,210,100,.6)'; x.font='8px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('✦',sx,sy);
+  });
+}
+
 // draw all pack canvases
 drawPackSpotlight(); drawPackStock(); drawPackCollection();
-drawPackNewsletter(); drawPackLeaderboard(); drawPackTrivia(); drawPackGrader();
+drawPackNewsletter(); drawPackLeaderboard(); drawPackTrivia(); drawPackGrader(); drawPackFriends();
 document.querySelectorAll('.pack-wrap:not(.pack-soon)').forEach(wrap=>{
   wrap.addEventListener('click',()=>{
     const href=wrap.dataset.href;

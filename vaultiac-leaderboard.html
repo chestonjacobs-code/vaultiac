@@ -444,26 +444,25 @@ async function loadPersonalPanel() {
       fetch(`/api/leaderboard/user/${encodeURIComponent(username)}/sessions`)
     ]);
 
+    let userData = null;
     if (statsRes.ok) {
       const statsData = await statsRes.json();
-      const user = statsData.data;
-      if (user) {
-        document.getElementById('pCurStreak').textContent = user.current_streak || 0;
-        document.getElementById('pBestStreak').textContent = user.longest_streak || 0;
-        document.getElementById('pTotalPts').textContent = user.total_points || 0;
-        if (user.last_played_date) {
-          const firstPlay = new Date(user.last_played_date);
-          const days = Math.max(1, Math.ceil((Date.now() - firstPlay) / 86400000));
-          document.getElementById('pAvgPts').textContent = (user.total_points / days).toFixed(1);
-        } else {
-          document.getElementById('pAvgPts').textContent = '0';
-        }
+      userData = statsData.data;
+      if (userData) {
+        document.getElementById('pCurStreak').textContent = userData.current_streak || 0;
+        document.getElementById('pBestStreak').textContent = userData.longest_streak || 0;
+        document.getElementById('pTotalPts').textContent = userData.total_points || 0;
       }
     }
 
     if (sessionsRes.ok) {
       const sessionsData = await sessionsRes.json();
       const sessions = sessionsData.data || [];
+      const sessionCount = sessions.length;
+      const avgPts = sessionCount > 0 && userData
+        ? (userData.total_points / sessionCount).toFixed(1)
+        : '0';
+      document.getElementById('pAvgPts').textContent = avgPts;
       buildActivityCalendar(sessions);
       buildClueBreakdown(sessions);
     }

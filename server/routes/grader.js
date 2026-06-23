@@ -3,7 +3,7 @@ const { requireAuth } = require('./auth');
 const heicConvert = require('heic-convert');
 const router = express.Router();
 
-const SYSTEM_PROMPT = `You are an expert trading card grader with deep knowledge of PSA, CGC, TAG, and BGS grading standards for Pokemon TCG cards.
+const SYSTEM_PROMPT = `You are an expert trading card grader with deep knowledge of PSA, CGC, TAG, and BGS grading standards for trading cards of all types, including Pokémon TCG, Magic: The Gathering, sports cards, and other collectible card games.
 
 When analyzing a card image, evaluate these four attributes on a 0-10 scale:
 - Centering: How well-centered the image is within the card border (left/right and top/bottom ratios)

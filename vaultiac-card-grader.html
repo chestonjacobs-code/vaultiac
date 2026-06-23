@@ -135,7 +135,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .results-head .rh-title{font-family:"Fraunces",serif;font-weight:900;font-size:24px;}
 
 /* Grade cards — 3 in a row */
-.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.grade-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
 .grade-card{border-radius:16px;padding:16px 12px;text-align:center;
   background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid var(--line);
   position:relative;overflow:hidden;}
@@ -143,7 +143,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .grade-card.grade-mid{border-color:rgba(232,194,122,.3);background:radial-gradient(circle at 50% 0%,rgba(232,194,122,.06),transparent 60%),linear-gradient(155deg,#16121e,#0d0b12);}
 .grade-card.grade-low{border-color:rgba(240,100,100,.2);background:radial-gradient(circle at 50% 0%,rgba(240,100,100,.05),transparent 60%),linear-gradient(155deg,#16121e,#0d0b12);}
 .gc-company{font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.gc-grade{font-family:"Fraunces",serif;font-weight:900;font-size:42px;line-height:1;}
+.gc-grade{font-family:"Fraunces",serif;font-weight:900;font-size:34px;line-height:1;}
 .grade-card.grade-high .gc-grade{background:linear-gradient(90deg,#fff,var(--holo1));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .grade-card.grade-mid .gc-grade{background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .grade-card.grade-low .gc-grade{color:rgba(240,160,160,.9);}
@@ -256,7 +256,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <div class="page-head">
   <div class="kick">AI-Powered</div>
   <h1>Card Grader</h1>
-  <p class="sub">Upload front and back photos to get AI-estimated grades from PSA, CGC, and TAG.</p>
+  <p class="sub">Upload front and back photos to get AI-estimated grades from PSA, CGC, TAG, and Beckett.</p>
 </div>
 
 <!-- BETA BANNER -->
@@ -319,7 +319,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- ANALYZE BUTTON (logged-in users) -->
 <div class="analyze-wrap" id="analyzeWrap" style="display:none;">
   <button class="analyze-btn" id="analyzeBtn" disabled>Grade this card</button>
-<button style="width:100%;margin-top:8px;padding:10px;background:#333;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:13px;cursor:pointer;" onclick="debugUpload()">DEBUG: Log MIME type</button>
 </div>
 
 <!-- GUEST GATE (guests) -->
@@ -370,6 +369,12 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
       <div class="gc-company">TAG</div>
       <div class="gc-grade" id="gradeTAG">—</div>
       <div class="gc-label" id="labelTAG">—</div>
+    </div>
+    <div class="grade-card" id="gcBGS">
+      <div class="gc-company">BGS</div>
+      <div class="gc-grade" id="gradeBGS">—</div>
+      <div class="gc-label" id="labelBGS">—</div>
+      <div class="gc-sub">half-point scale</div>
     </div>
   </div>
 
@@ -516,9 +521,12 @@ function handleFront(file) {
     }
     // If mobile Safari returns completely empty type (data:;base64,...), patch to image/jpeg
     // Do NOT patch image/heic — let the server convert it properly
-    frontDataURL = result.startsWith('data:;') || result.startsWith('data:application/octet-stream')
-      ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
-      : result;
+    frontDataURL = (
+      result.startsWith('data:;') ||
+      result.startsWith('data:application/octet-stream') ||
+      result.startsWith('data:image/heic') ||
+      result.startsWith('data:image/heif')
+    ) ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;') : result;
     document.getElementById('frontImg').src = frontDataURL;
     document.getElementById('frontName').textContent = file.name || 'Photo';
     document.getElementById('frontPrompt').style.display = 'none';
@@ -580,10 +588,12 @@ function handleBack(file) {
       alert('Could not load this photo. Please try a different image.');
       return;
     }
-    // Do NOT patch image/heic — let the server convert it properly
-    backDataURL = result.startsWith('data:;') || result.startsWith('data:application/octet-stream')
-      ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;')
-      : result;
+    backDataURL = (
+      result.startsWith('data:;') ||
+      result.startsWith('data:application/octet-stream') ||
+      result.startsWith('data:image/heic') ||
+      result.startsWith('data:image/heif')
+    ) ? result.replace(/^data:[^;]*;/, 'data:image/jpeg;') : result;
     document.getElementById('backImg').src = backDataURL;
     document.getElementById('backName').textContent = file.name || 'Photo';
     document.getElementById('backPrompt').style.display = 'none';
@@ -620,23 +630,6 @@ function hideResults() {
 }
 
 // ===== ANALYZE =====
-// TEMPORARY DEBUG FUNCTION
-async function debugUpload() {
-  if (!frontDataURL) { alert('Select a front photo first.'); return; }
-  const token = localStorage.getItem('vaultiac_token');
-  if (!token) { alert('Log in first.'); return; }
-  const body = { front_image: frontDataURL };
-  if (backDataURL) body.back_image = backDataURL;
-  const res = await fetch('/api/grader/debug', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  const json = await res.json();
-  alert(JSON.stringify(json.front, null, 2));
-}
-// END TEMPORARY DEBUG FUNCTION
-
 analyzeBtn.addEventListener('click', async function() {
   if (!frontDataURL) {
     alert('Please select a front photo first.');
@@ -695,6 +688,7 @@ function barClass(score) {
 const PSA_LABELS = {10:'Gem Mint',9:'Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good-Excellent',3:'Very Good',2:'Good',1:'Poor'};
 const CGC_LABELS = {10:'Pristine',9.5:'Gem Mint',9:'Mint',8.5:'Near Mint-Mint',8:'Near Mint-Mint',7.5:'Near Mint',7:'Near Mint',6.5:'Excellent-Mint',6:'Excellent-Mint',5.5:'Excellent',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
 const TAG_LABELS = {10:'Perfect',9:'Gem Mint',8:'Near Mint-Mint',7:'Near Mint',6:'Excellent-Mint',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
+const BGS_LABELS = {10:'Pristine',9.5:'Gem Mint',9:'Mint',8.5:'Near Mint-Mint',8:'Near Mint-Mint',7.5:'Near Mint',7:'Near Mint',6.5:'Excellent-Mint',6:'Excellent-Mint',5.5:'Excellent',5:'Excellent',4:'Very Good',3:'Good',2:'Fair',1:'Poor'};
 
 // ===== RENDER RESULTS =====
 function renderResults(data) {
@@ -714,6 +708,11 @@ function renderResults(data) {
   document.getElementById('gradeTAG').textContent = tagGrade;
   document.getElementById('labelTAG').textContent = TAG_LABELS[tagGrade] || '';
   document.getElementById('gcTAG').className = 'grade-card ' + gradeClass(tagGrade);
+
+  const bgsGrade = data.bgs_grade;
+  document.getElementById('gradeBGS').textContent = bgsGrade;
+  document.getElementById('labelBGS').textContent = BGS_LABELS[bgsGrade] || '';
+  document.getElementById('gcBGS').className = 'grade-card ' + gradeClass(bgsGrade);
 
   const attrs = data.attributes || {};
   ['centering','corners','edges','surface'].forEach(attr => {
@@ -746,7 +745,8 @@ document.getElementById('feedbackBtn').addEventListener('click', function() {
   const psa = document.getElementById('gradePSA').textContent;
   const cgc = document.getElementById('gradeCGC').textContent;
   const tag = document.getElementById('gradeTAG').textContent;
-  const msg = 'Grader feedback for ' + cardName + ' — AI estimated PSA ' + psa + ' / CGC ' + cgc + ' / TAG ' + tag + '. Actual grade: [please fill in]. How close was it?';
+  const bgs = document.getElementById('gradeBGS').textContent;
+  const msg = 'Grader feedback for ' + cardName + ' — AI estimated PSA ' + psa + ' / CGC ' + cgc + ' / TAG ' + tag + ' / BGS ' + bgs + '. Actual grade: [please fill in]. How close was it?';
   const input = document.getElementById('suggestInput');
   if (input) {
     input.value = msg;

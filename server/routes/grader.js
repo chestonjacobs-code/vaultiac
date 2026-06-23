@@ -3,7 +3,7 @@ const { requireAuth } = require('./auth');
 const heicConvert = require('heic-convert');
 const router = express.Router();
 
-const SYSTEM_PROMPT = `You are an expert trading card grader with deep knowledge of PSA, CGC, and TAG grading standards for Pokemon TCG cards.
+const SYSTEM_PROMPT = `You are an expert trading card grader with deep knowledge of PSA, CGC, TAG, and BGS grading standards for Pokemon TCG cards.
 
 When analyzing a card image, evaluate these four attributes on a 0-10 scale:
 - Centering: How well-centered the image is within the card border (left/right and top/bottom ratios)
@@ -11,10 +11,11 @@ When analyzing a card image, evaluate these four attributes on a 0-10 scale:
 - Edges: Condition of all four edges (look for chips, nicks, roughness, whitening)
 - Surface: Condition of front surface (look for scratches, print lines, stains, haze, creases)
 
-Then estimate grades for three companies:
+Then estimate grades for four companies:
 - PSA: Uses whole numbers 1-10. PSA 10 Gem Mint requires near-perfect centering (60/40 or better), sharp corners, clean edges, and pristine surface. PSA is the strictest on centering.
 - CGC: Uses half-point increments (1, 1.5, 2... 9.5, 10). CGC Pristine 10 is flawless under 10x magnification. CGC 9.5 Gem Mint is their most common top grade. CGC is slightly more generous than PSA on centering but strict on surface.
 - TAG: Uses whole numbers 1-10. TAG uses photometric imaging technology and is known for consistency and strictness on surface defects. TAG 10 Perfect is extremely rare. TAG often grades similarly to PSA but can be stricter on edges.
+- BGS (Beckett Grading Services): Uses half-point increments (1 through 10). BGS grades four sub-grades separately: Centering, Corners, Edges, Surface — each on a 1-10 half-point scale. The overall BGS grade is determined by the lowest sub-grade (with some flexibility). BGS 10 Pristine requires all sub-grades at 10. BGS 9.5 Gem Mint is their most common top grade. BGS 9 is Mint. BGS is known for strict sub-grade transparency and is widely used for vintage and modern cards.
 
 Grade boundaries (approximate):
 - 10: Near perfect in all categories
@@ -22,6 +23,7 @@ Grade boundaries (approximate):
 - 8: Minor flaws in 1-2 categories
 - 7: Noticeable flaws but still presentable
 - 6 and below: Significant wear or damage
+BGS uses the same 1-10 scale with half-point increments, with sub-grades driving the overall.
 
 Important: If the image does not clearly show a trading card, or is too blurry/dark to assess, return an error.
 
@@ -31,6 +33,7 @@ Respond ONLY with valid JSON in this exact format, no markdown, no extra text:
   "psa_grade": 8,
   "cgc_grade": 8.5,
   "tag_grade": 8,
+  "bgs_grade": 8.5,
   "attributes": {
     "centering": 8.5,
     "corners": 8.0,
@@ -59,36 +62,6 @@ async function convertHeicToJpeg(base64Data) {
     throw new Error('Could not convert iPhone photo. Please try a different image.');
   }
 }
-
-// TEMPORARY DEBUG ENDPOINT — remove after HEIC diagnosis
-router.post('/debug', requireAuth, async (req, res) => {
-  const { front_image, back_image } = req.body;
-  const report = {};
-
-  function inspect(dataUrl, label) {
-    if (!dataUrl) return { present: false };
-    const prefix = dataUrl.slice(0, 80);
-    const m = dataUrl.match(/^data:([^;]+);base64,/);
-    return {
-      present: true,
-      length: dataUrl.length,
-      prefix,
-      detectedMime: m ? m[1] : 'NO MATCH',
-      startsWithDataColon: dataUrl.startsWith('data:'),
-      startsWithDataSemicolon: dataUrl.startsWith('data:;'),
-      startsWithDataApplication: dataUrl.startsWith('data:application/'),
-      startsWithDataImageHeic: dataUrl.startsWith('data:image/heic'),
-      startsWithDataImageJpeg: dataUrl.startsWith('data:image/jpeg'),
-    };
-  }
-
-  report.front = inspect(front_image, 'front');
-  report.back = inspect(back_image, 'back');
-
-  console.log('[grader/debug]', JSON.stringify(report, null, 2));
-  return res.json(report);
-});
-// END TEMPORARY DEBUG ENDPOINT
 
 router.post('/analyze', requireAuth, async (req, res) => {
   const { front_image, back_image, image } = req.body;
@@ -180,12 +153,12 @@ router.post('/analyze', requireAuth, async (req, res) => {
     contentBlocks.push({ type: 'text', text: 'This is the BACK of the card.' });
     contentBlocks.push({
       type: 'text',
-      text: 'Please analyze both sides of this trading card and provide grade estimates for PSA, CGC, and TAG. Consider defects visible on both the front and back when scoring each attribute.'
+      text: 'Please analyze both sides of this trading card and provide grade estimates for PSA, CGC, TAG, and BGS. Consider defects visible on both the front and back when scoring each attribute.'
     });
   } else {
     contentBlocks.push({
       type: 'text',
-      text: 'Please analyze this trading card front and provide grade estimates for PSA, CGC, and TAG. Note that only the front image was provided, so back-surface defects cannot be assessed.'
+      text: 'Please analyze this trading card front and provide grade estimates for PSA, CGC, TAG, and BGS. Note that only the front image was provided, so back-surface defects cannot be assessed.'
     });
   }
 

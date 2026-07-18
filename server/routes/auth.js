@@ -83,7 +83,7 @@ router.post('/signup', async (req, res) => {
     const password_hash = await bcrypt.hash(password, 12);
 
     const { rows } = await pool.query(
-      'INSERT INTO users (email, password_hash, username, notify_updates, agreed_to_terms) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, username, notify_updates, created_at',
+      'INSERT INTO users (email, password_hash, username, notify_updates, agreed_to_terms) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, username, notify_updates, created_at, avatar_url',
       [cleanEmail, password_hash, cleanUsername, notify_updates, agreed_to_terms]
     );
     const user = rows[0];
@@ -96,7 +96,7 @@ router.post('/signup', async (req, res) => {
     );
 
     const token = generateToken(user);
-    return res.json({ token, user: { id: user.id, email: user.email, username: user.username, notify_updates: user.notify_updates } });
+    return res.json({ token, user: { id: user.id, email: user.email, username: user.username, notify_updates: user.notify_updates, avatar_url: user.avatar_url } });
 
   } catch(e) {
     console.error('[auth] signup error:', e.message, e.stack);
@@ -118,7 +118,7 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(401).json({ error: 'Incorrect password.' });
 
     const token = generateToken(user);
-    return res.json({ token, user: { id: user.id, email: user.email, username: user.username } });
+    return res.json({ token, user: { id: user.id, email: user.email, username: user.username, avatar_url: user.avatar_url } });
 
   } catch(e) {
     console.error('[auth] login error:', e.message, e.stack);
@@ -130,7 +130,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, username, created_at FROM users WHERE id = $1',
+      'SELECT id, email, username, created_at, avatar_url FROM users WHERE id = $1',
       [req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -221,6 +221,43 @@ router.post('/notify-opt-in', requireAuth, async (req, res) => {
   } catch(e) {
     console.error('[auth] notify-opt-in error:', e.message);
     return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/avatar — upload/update profile avatar (expects a data URI string)
+router.post('/avatar', requireAuth, async (req, res) => {
+  const { avatar_data } = req.body;
+  if (!avatar_data || typeof avatar_data !== 'string') {
+    return res.status(400).json({ error: 'avatar_data is required' });
+  }
+  if (!avatar_data.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'avatar_data must be an image data URI' });
+  }
+  // Safety net size check — client should already resize/compress before sending.
+  // 500KB base64 ceiling (roughly ~375KB actual image data).
+  if (avatar_data.length > 500 * 1024) {
+    return res.status(413).json({ error: 'Image too large — please use a smaller photo' });
+  }
+  try {
+    await pool.query(
+      'UPDATE users SET avatar_url = $1 WHERE id = $2',
+      [avatar_data, req.user.id]
+    );
+    return res.json({ success: true, avatar_url: avatar_data });
+  } catch(e) {
+    console.error('[auth] avatar upload error:', e.message);
+    return res.status(500).json({ error: 'Server error saving avatar' });
+  }
+});
+
+// DELETE /api/auth/avatar — remove profile avatar, revert to initial-letter fallback
+router.delete('/avatar', requireAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET avatar_url = NULL WHERE id = $1', [req.user.id]);
+    return res.json({ success: true });
+  } catch(e) {
+    console.error('[auth] avatar delete error:', e.message);
+    return res.status(500).json({ error: 'Server error removing avatar' });
   }
 });
 

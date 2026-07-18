@@ -458,10 +458,17 @@ async function loadPersonalPanel() {
     if (sessionsRes.ok) {
       const sessionsData = await sessionsRes.json();
       const sessions = sessionsData.data || [];
-      const sessionCount = sessions.length;
-      const avgPts = sessionCount > 0 && userData
-        ? (userData.total_points / sessionCount).toFixed(1)
-        : '0';
+      const pointsLast30 = sessions.reduce((sum, s) => sum + (parseInt(s.points_earned) || 0), 0);
+
+      let daysSinceSignup = 30;
+      if (userData && userData.created_at) {
+        const signupDate = new Date(userData.created_at);
+        const msPerDay = 1000 * 60 * 60 * 24;
+        daysSinceSignup = Math.floor((Date.now() - signupDate.getTime()) / msPerDay);
+      }
+      const denominator = Math.max(1, Math.min(30, daysSinceSignup));
+      const avgPts = userData ? (pointsLast30 / denominator).toFixed(1) : '0';
+
       document.getElementById('pAvgPts').textContent = avgPts;
       buildActivityCalendar(sessions);
       buildClueBreakdown(sessions);

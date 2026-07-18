@@ -23,7 +23,10 @@ router.get('/', async (req, res) => {
 router.get('/user/:username', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT username, total_points, current_streak, longest_streak, last_played_date FROM leaderboard WHERE username = $1',
+      `SELECT l.username, l.total_points, l.current_streak, l.longest_streak, l.last_played_date, u.created_at
+       FROM leaderboard l
+       JOIN users u ON LOWER(u.username) = LOWER(l.username)
+       WHERE l.username = $1`,
       [req.params.username]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });

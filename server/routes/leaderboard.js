@@ -44,7 +44,7 @@ router.get('/user/:username/sessions', async (req, res) => {
       `SELECT clues_used, points_earned, solved, played_at
        FROM trivia_sessions
        WHERE username = $1
-         AND played_at >= NOW() - INTERVAL '30 days'
+         AND played_at::timestamptz >= NOW() - INTERVAL '30 days'
        ORDER BY played_at ASC`,
       [req.params.username]
     );

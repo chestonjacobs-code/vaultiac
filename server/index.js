@@ -10,9 +10,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '20mb' }));
 
 // Serve static HTML files from the root Vaultiac directory
-app.use(express.static(path.join(__dirname, '../')));
+app.use(express.static(path.join(__dirname, '../'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 // Serve /public for JS client and other assets
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 
 // API routes
 const { router: authRouter } = require('./routes/auth');

@@ -208,27 +208,47 @@ const VaultAuth = (() => {
   document.body.appendChild(overlay);
 
   // ---- ACCOUNT BUTTON ----
-  // Placed fixed top-right on every page
-  const btnWrap = document.createElement('div');
-  btnWrap.style.cssText = 'position:fixed;top:16px;right:16px;z-index:30;';
-  const btn = document.createElement('button');
-  btn.className = 'va-auth-btn';
-  btn.id = 'vaAuthBtn';
-  btnWrap.appendChild(btn);
-  document.body.appendChild(btnWrap);
+  // If the page already has its own nav auth button (e.g. vaultiac-home.html's
+  // styled nav-cta), reuse it instead of creating a duplicate floating button.
+  const existingNavBtn = document.getElementById('vaultiacNavAuthBtn');
+  let btn;
+  let usingExistingNavBtn = false;
+  if (existingNavBtn) {
+    btn = existingNavBtn;
+    usingExistingNavBtn = true;
+  } else {
+    const btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'position:fixed;top:16px;right:16px;z-index:30;';
+    btn = document.createElement('button');
+    btn.className = 'va-auth-btn';
+    btn.id = 'vaAuthBtn';
+    btnWrap.appendChild(btn);
+    document.body.appendChild(btnWrap);
+  }
 
   // ---- STATE ----
   let usernameCheckTimer = null;
   let usernameAvailable = false;
 
+  function avatarThumbHtml(user) {
+    if (user.avatar_url) {
+      return `<img src="${user.avatar_url}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;">`;
+    }
+    return `<span>👤</span>`;
+  }
+
   function updateButton() {
     if (VaultAuth.isLoggedIn()) {
       const user = VaultAuth.getUser();
-      btn.className = 'va-auth-btn logged-in';
-      btn.innerHTML = `<span>👤</span> ${user.username}`;
+      if (!usingExistingNavBtn) {
+        btn.className = 'va-auth-btn logged-in';
+      }
+      btn.innerHTML = `${avatarThumbHtml(user)} ${user.username}`;
     } else {
-      btn.className = 'va-auth-btn';
-      btn.innerHTML = 'Sign In';
+      if (!usingExistingNavBtn) {
+        btn.className = 'va-auth-btn';
+      }
+      btn.innerHTML = usingExistingNavBtn ? 'Sign Up Free' : 'Sign In';
     }
   }
 
@@ -248,9 +268,18 @@ const VaultAuth = (() => {
   function renderLoggedIn() {
     const user = VaultAuth.getUser();
     document.getElementById('vaModalSub').textContent = 'Your Vaultiac account.';
+    const avatarInner = user.avatar_url
+      ? `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : user.username.charAt(0).toUpperCase();
     document.getElementById('vaModalContent').innerHTML = `
       <div class="va-logged-in-panel">
-        <div class="va-user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+        <div class="va-user-avatar" style="overflow:hidden;position:relative;">${avatarInner}</div>
+        <input type="file" accept="image/*" id="vaAvatarFileInput" style="display:none;">
+        <div style="display:flex;gap:8px;justify-content:center;margin:8px 0 4px;">
+          <button id="vaChangePhotoBtn" style="font-family:inherit;font-size:11px;font-weight:700;color:#a78bfa;background:none;border:none;cursor:pointer;text-decoration:underline;">Change photo</button>
+          ${user.avatar_url ? '<button id="vaRemovePhotoBtn" style="font-family:inherit;font-size:11px;font-weight:700;color:#7a7488;background:none;border:none;cursor:pointer;text-decoration:underline;">Remove photo</button>' : ''}
+        </div>
+        <div class="va-error" id="vaAvatarError" style="min-height:16px;"></div>
         <div class="va-user-name">@${user.username}</div>
         <div class="va-user-email">${user.email}</div>
         <button class="va-logout-btn" id="vaLogoutBtn">Sign Out</button>
@@ -259,6 +288,87 @@ const VaultAuth = (() => {
     document.getElementById('vaLogoutBtn').addEventListener('click', () => {
       VaultAuth.logout();
     });
+    document.getElementById('vaChangePhotoBtn').addEventListener('click', () => {
+      document.getElementById('vaAvatarFileInput').click();
+    });
+    document.getElementById('vaAvatarFileInput').addEventListener('change', handleAvatarFileSelect);
+    const removeBtn = document.getElementById('vaRemovePhotoBtn');
+    if (removeBtn) removeBtn.addEventListener('click', handleAvatarRemove);
+  }
+
+  // Resize/compress an image file to a small square JPEG data URI before upload.
+  function resizeImageToDataUri(file, maxSize, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Could not load image'));
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = maxSize;
+          canvas.height = maxSize;
+          const ctx = canvas.getContext('2d');
+          // Cover-crop to a square from the center
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, maxSize, maxSize);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleAvatarFileSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const errorEl = document.getElementById('vaAvatarError');
+    errorEl.textContent = '';
+    if (!file.type.startsWith('image/')) {
+      errorEl.textContent = 'Please choose an image file.';
+      return;
+    }
+    try {
+      const dataUri = await resizeImageToDataUri(file, 256, 0.8);
+      const token = VaultAuth.getToken();
+      const res = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ avatar_data: dataUri })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      const user = VaultAuth.getUser();
+      user.avatar_url = data.avatar_url;
+      localStorage.setItem('vaultiac_user', JSON.stringify(user));
+      updateButton();
+      renderLoggedIn();
+    } catch(err) {
+      errorEl.textContent = err.message;
+    }
+  }
+
+  async function handleAvatarRemove() {
+    const errorEl = document.getElementById('vaAvatarError');
+    errorEl.textContent = '';
+    try {
+      const token = VaultAuth.getToken();
+      const res = await fetch('/api/auth/avatar', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) throw new Error('Could not remove photo');
+      const user = VaultAuth.getUser();
+      user.avatar_url = null;
+      localStorage.setItem('vaultiac_user', JSON.stringify(user));
+      updateButton();
+      renderLoggedIn();
+    } catch(err) {
+      errorEl.textContent = err.message;
+    }
   }
 
   function renderAuth(activeTab) {

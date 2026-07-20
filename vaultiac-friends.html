@@ -273,6 +273,17 @@ function authHeaders() {
   return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' };
 }
 
+// Renders a circular avatar image, or a letter-fallback circle matching the
+// account modal's gradient fallback (.va-user-avatar), sized for its row context.
+function vaAvatarHtml(avatarUrl, name, size) {
+  size = size || 34;
+  if (avatarUrl) {
+    return `<img src="${avatarUrl}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex:none;">`;
+  }
+  const letter = escHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f0a6c8);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:900;font-size:${Math.round(size*0.42)}px;color:#0c0a10;flex:none;">${letter}</div>`;
+}
+
 // ===== INIT =====
 let currentSort = 'streak';
 let currentUsername = null;
@@ -326,7 +337,7 @@ function renderPending(requests) {
   const list = document.getElementById('pendingList');
   list.innerHTML = requests.map(r => `
     <div class="req-card" id="req-${r.id}">
-      <div class="req-avatar">👤</div>
+      ${vaAvatarHtml(r.from_avatar_url, r.from_username, 38)}
       <div class="req-info">
         <div class="req-name">${escHtml(r.from_username)}</div>
         <div class="req-sub">wants to be your friend</div>
@@ -400,7 +411,7 @@ function renderFriends(rows, sort) {
     return `
       <div class="friend-row">
         <div class="fr-rank ${rankClass}">${i + 1}</div>
-        <div class="fr-avatar">⭐</div>
+        ${vaAvatarHtml(r.avatar_url, r.username, 34)}
         <div class="fr-name">${escHtml(r.username)}${isMe ? '<span class="fr-you">you</span>' : ''}</div>
         <div class="fr-stats">
           <div class="fr-primary">${primary}</div>

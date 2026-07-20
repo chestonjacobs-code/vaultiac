@@ -256,6 +256,7 @@ const VaultAuth = (() => {
     overlay.classList.add('open');
     if (VaultAuth.isLoggedIn()) {
       renderLoggedIn();
+      refreshUserFromServer();
     } else {
       renderAuth(tab || 'signup');
     }
@@ -263,6 +264,29 @@ const VaultAuth = (() => {
 
   function closeModal() {
     overlay.classList.remove('open');
+  }
+
+  // Pull the latest user record from the server and overwrite the local cache,
+  // so an avatar (or other profile change) made on another device shows up here.
+  async function refreshUserFromServer() {
+    const token = VaultAuth.getToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.user) return;
+      localStorage.setItem('vaultiac_user', JSON.stringify(data.user));
+      updateButton();
+      if (overlay.classList.contains('open') && VaultAuth.isLoggedIn()) {
+        renderLoggedIn();
+      }
+    } catch (e) {
+      // Network error or invalid token — leave cached state as-is and let
+      // normal 401 handling elsewhere take over.
+    }
   }
 
   function renderLoggedIn() {
@@ -567,6 +591,7 @@ const VaultAuth = (() => {
 
   // ---- INIT ----
   updateButton();
+  if (VaultAuth.isLoggedIn()) refreshUserFromServer();
 
   // Expose openModal globally so "Sign Up Free" buttons can call it
   window.vaultiacOpenAuth = (tab) => openModal(tab || 'signup');

@@ -8,8 +8,10 @@ router.get('/', async (req, res) => {
     const sort = req.query.sort === 'streak' ? 'current_streak' : 'total_points';
     const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const { rows } = await pool.query(
-      `SELECT username, total_points, current_streak, longest_streak, last_played_date
-       FROM leaderboard ORDER BY ${sort} DESC LIMIT $1`,
+      `SELECT l.username, l.total_points, l.current_streak, l.longest_streak, l.last_played_date, u.avatar_url
+       FROM leaderboard l
+       LEFT JOIN users u ON LOWER(u.username) = LOWER(l.username)
+       ORDER BY l.${sort} DESC LIMIT $1`,
       [limit]
     );
     res.json({ data: rows });
@@ -23,7 +25,7 @@ router.get('/', async (req, res) => {
 router.get('/user/:username', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT l.username, l.total_points, l.current_streak, l.longest_streak, l.last_played_date, u.created_at
+      `SELECT l.username, l.total_points, l.current_streak, l.longest_streak, l.last_played_date, u.created_at, u.avatar_url
        FROM leaderboard l
        JOIN users u ON LOWER(u.username) = LOWER(l.username)
        WHERE l.username = $1`,

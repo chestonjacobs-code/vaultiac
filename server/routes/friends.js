@@ -30,11 +30,11 @@ router.post('/invite', requireAuth, async (req, res) => {
 router.get('/invite-info/:token', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT u.username FROM friend_invites fi JOIN users u ON u.id = fi.inviter_id WHERE fi.token = $1',
+      'SELECT u.username, u.avatar_url FROM friend_invites fi JOIN users u ON u.id = fi.inviter_id WHERE fi.token = $1',
       [req.params.token]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Invite not found.' });
-    return res.json({ username: rows[0].username });
+    return res.json({ username: rows[0].username, avatar_url: rows[0].avatar_url });
   } catch (e) {
     console.error('[friends] invite-info error:', e.message);
     return res.status(500).json({ error: 'Server error' });
@@ -81,7 +81,7 @@ router.post('/request/:token', requireAuth, async (req, res) => {
 router.get('/pending', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT fr.id, fr.from_user_id, u.username as from_username, fr.invite_token, fr.created_at
+      `SELECT fr.id, fr.from_user_id, u.username as from_username, u.avatar_url as from_avatar_url, fr.invite_token, fr.created_at
        FROM friend_requests fr
        JOIN users u ON u.id = fr.from_user_id
        WHERE fr.to_user_id = $1 AND fr.status = 'pending'
@@ -142,7 +142,7 @@ router.get('/leaderboard', requireAuth, async (req, res) => {
         FROM friendships WHERE user_a_id = $1 OR user_b_id = $1
         UNION ALL SELECT $1
       )
-      SELECT u.username, l.total_points, l.current_streak, l.longest_streak
+      SELECT u.username, u.avatar_url, l.total_points, l.current_streak, l.longest_streak
       FROM friend_ids fi
       JOIN users u ON u.id = fi.fid
       LEFT JOIN leaderboard l ON l.username = u.username
@@ -160,7 +160,7 @@ router.get('/leaderboard', requireAuth, async (req, res) => {
 router.get('/list', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT u.username, l.total_points, l.current_streak
+      SELECT u.username, u.avatar_url, l.total_points, l.current_streak
       FROM friendships f
       JOIN users u ON u.id = CASE WHEN f.user_a_id = $1 THEN f.user_b_id ELSE f.user_a_id END
       LEFT JOIN leaderboard l ON l.username = u.username

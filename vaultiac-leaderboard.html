@@ -235,7 +235,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   <div class="yc-label">Your Standing</div>
   <div class="yc-row">
     <div class="yc-rank" id="yourRank">--</div>
-    <div class="yc-avatar">&#9889;</div>
+    <div class="yc-avatar" id="yourAvatar">&#9889;</div>
     <div class="yc-info">
       <div class="yc-name" id="yourName">--</div>
       <div class="yc-handle" id="yourHandle"></div>
@@ -262,7 +262,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 
 <!-- FRIEND REQUEST BANNER -->
 <div class="fr-banner" id="frBanner">
-  <div class="fr-head" id="frBannerHead">Friend request</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+    <div id="frBannerAvatar"></div>
+    <div class="fr-head" id="frBannerHead" style="margin-bottom:0;">Friend request</div>
+  </div>
   <div class="fr-sub" id="frBannerSub">wants to join your friend leaderboard.</div>
   <div class="fr-actions">
     <button class="fr-accept" id="frAcceptBtn">Accept</button>
@@ -347,6 +350,18 @@ function getCurrentUsername() {
 }
 const username = getCurrentUsername();
 
+// Renders a circular avatar image, or a letter-fallback circle matching the
+// account modal's gradient fallback (.va-user-avatar), sized for its row context.
+function vaAvatarHtml(avatarUrl, name, size) {
+  size = size || 34;
+  if (avatarUrl) {
+    return `<img src="${avatarUrl}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex:none;">`;
+  }
+  const raw = (name || '?').trim().charAt(0).toUpperCase() || '?';
+  const letter = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f0a6c8);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:900;font-size:${Math.round(size*0.42)}px;color:#0c0a10;flex:none;">${letter}</div>`;
+}
+
 async function loadLeaderboard() {
   try {
     const [streakRes, pointsRes] = await Promise.all([
@@ -358,8 +373,7 @@ async function loadLeaderboard() {
       rank: i + 1,
       name: d.username,
       handle: '@' + d.username.toLowerCase().replace(/\s/g, ''),
-      emoji: '⚡',
-      av: 'av' + ((i % 10) + 1),
+      avatar_url: d.avatar_url || null,
       streak: d.current_streak || 0,
       best: d.longest_streak || 0,
       pts: d.total_points || 0,
@@ -369,8 +383,7 @@ async function loadLeaderboard() {
       rank: i + 1,
       name: d.username,
       handle: '@' + d.username.toLowerCase().replace(/\s/g, ''),
-      emoji: '⚡',
-      av: 'av' + ((i % 10) + 1),
+      avatar_url: d.avatar_url || null,
       streak: d.current_streak || 0,
       best: d.longest_streak || 0,
       pts: d.total_points || 0,
@@ -407,6 +420,13 @@ async function loadYourCard() {
     const data = await res.json();
     const user = data.data;
     if (!user) return;
+
+    const avatarEl = document.getElementById('yourAvatar');
+    if (avatarEl) {
+      avatarEl.style.borderRadius = '50%';
+      avatarEl.style.overflow = 'hidden';
+      avatarEl.innerHTML = vaAvatarHtml(user.avatar_url, username, 38);
+    }
 
     if (subTab === 'streak') {
       document.getElementById('yourVal').textContent = user.current_streak || 0;
@@ -643,7 +663,7 @@ async function renderFriendsList() {
     const data = (json.data || []).map((d, i) => ({
       rank: i + 1,
       name: d.username,
-      av: 'av' + ((i % 10) + 1),
+      avatar_url: d.avatar_url || null,
       streak: d.current_streak || 0,
       best: d.longest_streak || 0,
       pts: d.total_points || 0,
@@ -663,7 +683,7 @@ async function renderFriendsList() {
       row.className = `lb-row ${topClass}`;
       row.innerHTML = `
         <div class="lb-rank">${rankDisplay}</div>
-        <div class="lb-avatar ${d.av}">⚡</div>
+        ${vaAvatarHtml(d.avatar_url, d.name, 34)}
         <div class="lb-info">
           <div class="lb-name">${d.name}</div>
           <div class="lb-sub">${subLine}</div>
@@ -772,7 +792,7 @@ function renderList() {
     row.className = `lb-row ${topClass}`;
     row.innerHTML = `
       <div class="lb-rank">${rankDisplay}</div>
-      <div class="lb-avatar ${d.av}">${d.emoji}</div>
+      ${vaAvatarHtml(d.avatar_url, d.name, 34)}
       <div class="lb-info">
         <div class="lb-name">${d.name}</div>
         <div class="lb-sub">${subLine}</div>
@@ -883,7 +903,7 @@ let pendingFriendRequest = null;
     try {
       const req = JSON.parse(storedRequest);
       if (tabParam !== 'friends') switchMain('friends');
-      showAddFriendBanner(req.from_username, null);
+      showAddFriendBanner(req.from_username, null, req.avatar_url || null);
     } catch(e) { /* silent */ }
   }
 })();
@@ -896,14 +916,14 @@ async function showAddFriendPrompt(token) {
       if (mainTab !== 'friends') {
         switchMain('friends');
       }
-      showAddFriendBanner(json.username, token);
+      showAddFriendBanner(json.username, token, json.avatar_url || null);
     }
   } catch(e) {
     showToast('Could not load invite. Please try the link again.');
   }
 }
 
-function showAddFriendBanner(fromUsername, token) {
+function showAddFriendBanner(fromUsername, token, avatarUrl) {
   const existing = document.getElementById('addFriendBanner');
   if (existing) existing.remove();
 
@@ -915,7 +935,10 @@ function showAddFriendBanner(fromUsername, token) {
     position:relative;z-index:2;animation:rise .4s ease forwards;
   `;
   banner.innerHTML = `
-    <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:#f3eee6;">@${fromUsername} wants to be friends</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      ${vaAvatarHtml(avatarUrl, fromUsername, 26)}
+      <div style="font-size:13px;font-weight:700;color:#f3eee6;">@${fromUsername} wants to be friends</div>
+    </div>
     <div style="font-size:12px;color:#9a93a6;margin-bottom:14px;">Accept to compete on a private leaderboard together.</div>
     <div style="display:flex;gap:8px;">
       <button id="addFriendAccept" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#0c0a10;
@@ -995,8 +1018,9 @@ function showAddFriendBanner(fromUsername, token) {
   });
 }
 
-function showFriendRequestBanner(fromUsername, requestId) {
+function showFriendRequestBanner(fromUsername, requestId, avatarUrl) {
   const banner = document.getElementById('frBanner');
+  document.getElementById('frBannerAvatar').innerHTML = vaAvatarHtml(avatarUrl, fromUsername, 26);
   document.getElementById('frBannerHead').textContent = '@' + fromUsername + ' wants to be friends';
   document.getElementById('frBannerSub').textContent = 'Accept to compete on a private leaderboard together.';
   banner.classList.add('show');
@@ -1056,7 +1080,7 @@ async function checkPendingRequests() {
     const pending = json.data || [];
     if (pending.length > 0) {
       const first = pending[0];
-      showFriendRequestBanner(first.from_username, first.id);
+      showFriendRequestBanner(first.from_username, first.id, first.from_avatar_url || null);
     }
   } catch (e) { /* silent */ }
 }

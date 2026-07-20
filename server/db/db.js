@@ -158,6 +158,28 @@ async function initSchema() {
       );
       CREATE INDEX IF NOT EXISTS idx_weekly_recaps_user ON weekly_recaps(user_id);
     `);
+    // Friend groups tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS groups (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        creator_id INTEGER NOT NULL REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS group_members (
+        group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        joined_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (group_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS group_invites (
+        token TEXT PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

@@ -31,6 +31,7 @@ app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/friends', require('./routes/friends'));
+app.use('/api/groups', require('./routes/groups'));
 app.use('/api/grader', require('./routes/grader'));
 app.use('/api/spotlight', require('./routes/spotlight'));
 app.use('/api/admin', require('./routes/admin'));

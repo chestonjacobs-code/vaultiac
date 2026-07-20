@@ -56,13 +56,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 
 .section-label{font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:12px;}
 
-/* YOUR STATS */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.stat-box{text-align:center;padding:14px 10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;}
-.sb-val{font-family:"Fraunces",serif;font-weight:900;font-size:28px;
-  background:linear-gradient(90deg,#fff,var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent;}
-.sb-lbl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-top:3px;}
-
 /* PENDING REQUESTS */
 .req-card{border-radius:14px;padding:14px 16px;background:rgba(245,166,35,.06);
   border:1px solid var(--amber-border);margin-bottom:10px;display:flex;align-items:center;gap:12px;}
@@ -82,27 +75,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   padding:7px 12px;cursor:pointer;transition:.2s;}
 .req-decline:hover{color:var(--paper);}
 
-/* SORT TOGGLE */
-.sort-toggle{display:flex;gap:6px;margin-bottom:14px;}
-.sort-btn{font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;
-  cursor:pointer;transition:.2s;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
-.sort-btn.active{background:var(--amber-glow);border-color:var(--amber-border);color:var(--amber);}
-
 /* FRIENDS LIST */
 .friend-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
 .friend-row:last-child{border-bottom:none;padding-bottom:0;}
-.fr-rank{font-family:"Fraunces",serif;font-weight:900;font-size:18px;color:var(--muted);width:24px;text-align:center;flex:none;}
-.fr-rank.gold{color:var(--amber);}
-.fr-rank.silver{color:#c8c8c8;}
-.fr-rank.bronze{color:#c87832;}
-.fr-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3a2808,#c07010);
-  display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;}
 .fr-name{flex:1;font-size:14px;font-weight:600;color:var(--paper);}
-.fr-you{font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-glow);
-  border:1px solid var(--amber-border);padding:2px 7px;border-radius:999px;margin-left:6px;}
-.fr-stats{text-align:right;flex:none;}
-.fr-primary{font-family:"Fraunces",serif;font-weight:900;font-size:18px;color:var(--paper);}
-.fr-secondary{font-size:10px;color:var(--muted);}
 
 /* EMPTY STATE */
 .empty-state{text-align:center;padding:28px 16px;}
@@ -165,28 +141,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <div class="page-head" style="opacity:0;animation:rise .6s .15s ease forwards;">
   <div class="kick">Your Crew</div>
   <h1>Friends</h1>
-  <p class="sub">Compete, compare, and climb together.</p>
+  <p class="sub">Invite friends and keep your crew in one place.</p>
 </div>
 
 <!-- LOGGED-IN CONTENT -->
 <div id="loggedInContent" style="display:none;width:100%;max-width:480px;">
-
-  <!-- YOUR STATS -->
-  <div class="section" id="statsSection">
-    <div class="card amber-border">
-      <div class="section-label">Your Stats</div>
-      <div class="stats-grid">
-        <div class="stat-box">
-          <div class="sb-val" id="myStreak">—</div>
-          <div class="sb-lbl">Current Streak</div>
-        </div>
-        <div class="stat-box">
-          <div class="sb-val" id="myPoints">—</div>
-          <div class="sb-lbl">Total Points</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- PENDING REQUESTS -->
   <div class="section" id="pendingSection" style="display:none;">
@@ -196,14 +155,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     </div>
   </div>
 
-  <!-- FRIENDS LEADERBOARD -->
+  <!-- YOUR FRIENDS -->
   <div class="section">
     <div class="card">
-      <div class="section-label">Friend Leaderboard</div>
-      <div class="sort-toggle">
-        <button class="sort-btn active" id="sortStreak" onclick="setSort('streak')">🔥 Streak</button>
-        <button class="sort-btn" id="sortPoints" onclick="setSort('points')">⭐ Points</button>
-      </div>
+      <div class="section-label">Your Friends</div>
       <div id="friendsList">
         <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">Loading...</div>
       </div>
@@ -285,7 +240,6 @@ function vaAvatarHtml(avatarUrl, name, size) {
 }
 
 // ===== INIT =====
-let currentSort = 'streak';
 let currentUsername = null;
 
 window.addEventListener('load', () => {
@@ -303,21 +257,7 @@ window.addEventListener('load', () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadMyStats(), loadPending(), loadFriendsLeaderboard(currentSort)]);
-}
-
-// ===== MY STATS =====
-async function loadMyStats() {
-  if (!currentUsername) return;
-  try {
-    const res = await fetch(`/api/leaderboard/user/${encodeURIComponent(currentUsername)}`, { headers: authHeaders() });
-    if (!res.ok) return;
-    const { data } = await res.json();
-    if (data) {
-      document.getElementById('myStreak').textContent = data.current_streak || 0;
-      document.getElementById('myPoints').textContent = data.total_points || 0;
-    }
-  } catch(e) {}
+  await Promise.all([loadPending(), loadFriendsList()]);
 }
 
 // ===== PENDING REQUESTS =====
@@ -363,36 +303,26 @@ async function respondRequest(requestId, action) {
     const list = document.getElementById('pendingList');
     if (!list.children.length) document.getElementById('pendingSection').style.display = 'none';
     showToast(action === 'accept' ? 'Friend added!' : 'Request declined.');
-    if (action === 'accept') loadFriendsLeaderboard(currentSort);
+    if (action === 'accept') loadFriendsList();
   } catch(e) {
     showToast('Something went wrong. Try again.');
   }
 }
 
-// ===== FRIENDS LEADERBOARD =====
-function setSort(sort) {
-  currentSort = sort;
-  document.getElementById('sortStreak').classList.toggle('active', sort === 'streak');
-  document.getElementById('sortPoints').classList.toggle('active', sort === 'points');
-  loadFriendsLeaderboard(sort);
-}
-
-async function loadFriendsLeaderboard(sort) {
+// ===== YOUR FRIENDS =====
+async function loadFriendsList() {
   try {
-    const res = await fetch(`/api/friends/leaderboard?sort=${sort}`, { headers: authHeaders() });
+    const res = await fetch('/api/friends/list', { headers: authHeaders() });
     if (!res.ok) return;
     const { data } = await res.json();
-    renderFriends(data || [], sort);
+    renderFriendsList(data || []);
   } catch(e) {}
 }
 
-function renderFriends(rows, sort) {
+function renderFriendsList(rows) {
   const el = document.getElementById('friendsList');
-  const friends = rows.filter(r => r.username !== currentUsername);
-  const me = rows.find(r => r.username === currentUsername);
-  const combined = me ? [me, ...friends] : friends;
 
-  if (friends.length === 0) {
+  if (rows.length === 0) {
     el.innerHTML = `
       <div class="empty-state">
         <div class="es-icon">👥</div>
@@ -402,23 +332,11 @@ function renderFriends(rows, sort) {
     return;
   }
 
-  const rankClasses = ['gold','silver','bronze'];
-  el.innerHTML = combined.map((r, i) => {
-    const isMe = r.username === currentUsername;
-    const primary = sort === 'points' ? (r.total_points || 0) : (r.current_streak || 0);
-    const secondary = sort === 'points' ? `${r.current_streak || 0} streak` : `${r.total_points || 0} pts`;
-    const rankClass = rankClasses[i] || '';
-    return `
-      <div class="friend-row">
-        <div class="fr-rank ${rankClass}">${i + 1}</div>
-        ${vaAvatarHtml(r.avatar_url, r.username, 34)}
-        <div class="fr-name">${escHtml(r.username)}${isMe ? '<span class="fr-you">you</span>' : ''}</div>
-        <div class="fr-stats">
-          <div class="fr-primary">${primary}</div>
-          <div class="fr-secondary">${secondary}</div>
-        </div>
-      </div>`;
-  }).join('');
+  el.innerHTML = rows.map(r => `
+    <div class="friend-row">
+      ${vaAvatarHtml(r.avatar_url, r.username, 34)}
+      <div class="fr-name">${escHtml(r.username)}</div>
+    </div>`).join('');
 }
 
 // ===== INVITE =====

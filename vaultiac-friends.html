@@ -127,6 +127,67 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   opacity:0;transition:opacity .3s, transform .3s;pointer-events:none;z-index:100;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* GROUPS LIST */
+.group-create-btn{font-family:inherit;font-size:12px;font-weight:700;color:var(--amber);
+  background:rgba(245,166,35,.08);border:1px solid var(--amber-border);border-radius:10px;
+  padding:9px 14px;cursor:pointer;transition:.2s;margin-bottom:14px;}
+.group-create-btn:hover{background:rgba(245,166,35,.14);}
+.group-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  cursor:pointer;transition:background .15s;}
+.group-row:hover{background:rgba(255,255,255,.03);}
+.group-row:last-child{border-bottom:none;padding-bottom:0;}
+.group-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--amber),#c07810);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;}
+.group-info{flex:1;min-width:0;}
+.group-name{font-size:14px;font-weight:700;color:var(--paper);}
+.group-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.group-creator-badge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--amber);background:rgba(245,166,35,.1);border:1px solid var(--amber-border);
+  padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+
+/* MODALS (create group / group detail) */
+.modal-overlay{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-panel{background:#16121e;border:1px solid var(--line);border-radius:20px;padding:24px 22px;
+  width:100%;max-width:420px;max-height:85vh;overflow-y:auto;
+  transform:translateY(16px);transition:transform .25s;}
+.modal-overlay.open .modal-panel{transform:translateY(0);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;
+  padding:4px 8px;border-radius:8px;transition:.2s;flex:none;}
+.modal-close:hover{color:var(--paper);background:rgba(255,255,255,.08);}
+.modal-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;font-family:inherit;font-size:14px;color:var(--paper);outline:none;margin-bottom:10px;}
+.modal-input:focus{border-color:var(--amber-border);}
+.modal-error{font-size:12px;color:#f09090;min-height:16px;margin-bottom:6px;}
+
+/* GROUP DETAIL MODAL */
+.group-modal-name{font-family:"Fraunces",serif;font-weight:700;font-size:20px;color:var(--paper);}
+.edit-pencil{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:6px;}
+.edit-pencil:hover{color:var(--amber);}
+.member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.member-row:last-child{border-bottom:none;}
+.member-name{flex:1;font-size:13px;font-weight:600;color:var(--paper);min-width:0;}
+.member-action{font-family:inherit;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);
+  transition:.2s;flex:none;}
+.member-action:hover{color:var(--paper);}
+.member-action.danger{color:#f09090;border-color:rgba(240,144,144,.25);}
+.member-action.danger:hover{background:rgba(240,144,144,.08);}
+.add-member-row{display:flex;gap:8px;margin-top:10px;}
+.add-member-select{flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--line);
+  border-radius:10px;padding:9px 10px;font-family:inherit;font-size:12px;color:var(--paper);outline:none;}
+.add-member-btn{font-family:inherit;font-size:12px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--amber),var(--amber2));border:none;border-radius:10px;
+  padding:9px 14px;cursor:pointer;flex:none;transition:.2s;}
+.add-member-btn:disabled{opacity:.4;cursor:default;}
+.danger-btn{width:100%;font-family:inherit;font-size:13px;font-weight:700;color:#f09090;
+  background:rgba(240,144,144,.06);border:1px solid rgba(240,144,144,.25);border-radius:12px;
+  padding:12px;cursor:pointer;transition:.2s;margin-top:16px;}
+.danger-btn:hover{background:rgba(240,144,144,.12);}
+
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
@@ -160,6 +221,17 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <div class="card">
       <div class="section-label">Your Friends</div>
       <div id="friendsList">
+        <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUR GROUPS -->
+  <div class="section">
+    <div class="card">
+      <div class="section-label">Your Groups</div>
+      <button class="group-create-btn" onclick="openCreateGroupModal()">+ Create Group</button>
+      <div id="groupsList">
         <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">Loading...</div>
       </div>
     </div>
@@ -210,6 +282,24 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- CREATE GROUP MODAL -->
+<div class="modal-overlay" id="createGroupModal">
+  <div class="modal-panel" style="max-width:360px;">
+    <div class="modal-head">
+      <div class="section-label" style="margin-bottom:0;">Create Group</div>
+      <button class="modal-close" onclick="closeCreateGroupModal()">&#10005;</button>
+    </div>
+    <input class="modal-input" id="createGroupNameInput" type="text" maxlength="40" placeholder="Group name">
+    <div class="modal-error" id="createGroupError"></div>
+    <button class="invite-btn" id="createGroupSubmitBtn" onclick="submitCreateGroup()">Create</button>
+  </div>
+</div>
+
+<!-- GROUP DETAIL MODAL -->
+<div class="modal-overlay" id="groupDetailModal">
+  <div class="modal-panel" id="groupDetailBody"></div>
+</div>
+
 <script>
 // ===== HELPERS =====
 function getToken() { return localStorage.getItem('vaultiac_token'); }
@@ -241,23 +331,29 @@ function vaAvatarHtml(avatarUrl, name, size) {
 
 // ===== INIT =====
 let currentUsername = null;
+let friendsCache = [];
+
+function activateLoggedInView(user) {
+  currentUsername = user.username;
+  document.getElementById('loggedInContent').style.display = 'block';
+  document.getElementById('guestGate').style.display = 'none';
+  return loadAll();
+}
 
 window.addEventListener('load', () => {
   const token = getToken();
   const user = getCurrentUser();
   if (token && user) {
-    currentUsername = user.username;
-    document.getElementById('loggedInContent').style.display = 'block';
-    document.getElementById('guestGate').style.display = 'none';
-    loadAll();
+    activateLoggedInView(user);
   } else {
     document.getElementById('loggedInContent').style.display = 'none';
     document.getElementById('guestGate').style.display = 'block';
   }
+  handleJoinGroupParam();
 });
 
 async function loadAll() {
-  await Promise.all([loadPending(), loadFriendsList()]);
+  await Promise.all([loadPending(), loadFriendsList(), loadGroupsList()]);
 }
 
 // ===== PENDING REQUESTS =====
@@ -315,7 +411,8 @@ async function loadFriendsList() {
     const res = await fetch('/api/friends/list', { headers: authHeaders() });
     if (!res.ok) return;
     const { data } = await res.json();
-    renderFriendsList(data || []);
+    friendsCache = data || [];
+    renderFriendsList(friendsCache);
   } catch(e) {}
 }
 
@@ -362,9 +459,429 @@ async function copyInviteLink() {
   }
 }
 
+// ===== GROUPS =====
+async function loadGroupsList() {
+  try {
+    const res = await fetch('/api/groups', { headers: authHeaders() });
+    if (!res.ok) return;
+    const { data } = await res.json();
+    renderGroupsList(data || []);
+  } catch(e) {}
+}
+
+function renderGroupsList(groups) {
+  const el = document.getElementById('groupsList');
+
+  if (groups.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="es-icon">🧑‍🤝‍🧑</div>
+        <div class="es-title">No groups yet</div>
+        <div class="es-sub">Create a group to organize friends for shared challenges.</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = groups.map(g => `
+    <div class="group-row" onclick="openGroupDetail(${g.id})">
+      <div class="group-icon">🧑‍🤝‍🧑</div>
+      <div class="group-info">
+        <div class="group-name">${escHtml(g.name)}${g.is_creator ? '<span class="group-creator-badge">Creator</span>' : ''}</div>
+        <div class="group-sub">${g.member_count} member${g.member_count === 1 ? '' : 's'}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ---- CREATE GROUP MODAL ----
+function openCreateGroupModal() {
+  document.getElementById('createGroupNameInput').value = '';
+  document.getElementById('createGroupError').textContent = '';
+  document.getElementById('createGroupModal').classList.add('open');
+  document.getElementById('createGroupNameInput').focus();
+}
+
+function closeCreateGroupModal() {
+  document.getElementById('createGroupModal').classList.remove('open');
+}
+
+async function submitCreateGroup() {
+  const name = document.getElementById('createGroupNameInput').value.trim();
+  const errorEl = document.getElementById('createGroupError');
+  const btn = document.getElementById('createGroupSubmitBtn');
+  errorEl.textContent = '';
+  if (!name) { errorEl.textContent = 'Group name is required.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+  try {
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not create group.');
+    closeCreateGroupModal();
+    showToast('Group created!');
+    loadGroupsList();
+  } catch(e) {
+    errorEl.textContent = e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Create';
+}
+
+// ---- GROUP DETAIL MODAL ----
+let currentGroupId = null;
+
+async function openGroupDetail(groupId) {
+  currentGroupId = groupId;
+  document.getElementById('groupDetailBody').innerHTML =
+    '<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;">Loading...</div>';
+  document.getElementById('groupDetailModal').classList.add('open');
+  await refreshGroupDetail();
+}
+
+function closeGroupDetailModal() {
+  document.getElementById('groupDetailModal').classList.remove('open');
+  currentGroupId = null;
+}
+
+async function refreshGroupDetail() {
+  if (!currentGroupId) return;
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, { headers: authHeaders() });
+    if (res.status === 404) {
+      closeGroupDetailModal();
+      showToast('This group no longer exists.');
+      loadGroupsList();
+      return;
+    }
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderGroupDetail(data);
+  } catch(e) {
+    document.getElementById('groupDetailBody').innerHTML =
+      '<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;">Could not load group.</div>';
+  }
+}
+
+function renderGroupDetail(data) {
+  const isCreator = data.creator_username === currentUsername;
+  const members = data.members || [];
+  const memberUsernamesLower = members.map(m => m.username.toLowerCase());
+  const availableFriends = friendsCache.filter(f => !memberUsernamesLower.includes(f.username.toLowerCase()));
+
+  const memberRowsHtml = members.map(m => {
+    let action = '';
+    if (isCreator && !m.is_creator) {
+      action = `<button class="member-action danger" onclick="removeGroupMember('${escJs(m.username)}')">Remove</button>`;
+    } else if (!isCreator && m.username === currentUsername) {
+      action = `<button class="member-action" onclick="removeGroupMember('${escJs(m.username)}')">Leave</button>`;
+    }
+    return `
+      <div class="member-row">
+        ${vaAvatarHtml(m.avatar_url, m.username, 30)}
+        <div class="member-name">${escHtml(m.username)}${m.is_creator ? '<span class="group-creator-badge">Creator</span>' : ''}</div>
+        ${action}
+      </div>`;
+  }).join('');
+
+  let addFriendHtml = '';
+  if (isCreator) {
+    if (availableFriends.length > 0) {
+      addFriendHtml = `
+        <div class="section-label" style="margin-top:18px;">Add Friend</div>
+        <div class="add-member-row">
+          <select class="add-member-select" id="addMemberSelect">
+            ${availableFriends.map(f => `<option value="${escHtml(f.username)}">${escHtml(f.username)}</option>`).join('')}
+          </select>
+          <button class="add-member-btn" id="addMemberBtn" onclick="addGroupMember()">Add</button>
+        </div>`;
+    } else {
+      const explain = friendsCache.length > 0
+        ? 'All your friends are already in this group.'
+        : 'Add friends first, then invite them to a group.';
+      addFriendHtml = `
+        <div class="section-label" style="margin-top:18px;">Add Friend</div>
+        <div style="font-size:12px;color:var(--muted);">${explain}</div>`;
+    }
+  }
+
+  document.getElementById('groupDetailBody').innerHTML = `
+    <div class="modal-head">
+      <div id="groupNameDisplay" style="display:flex;align-items:center;">
+        <span class="group-modal-name" id="groupNameText">${escHtml(data.name)}</span>
+        ${isCreator ? '<button class="edit-pencil" onclick="startEditGroupName()">&#9998;</button>' : ''}
+      </div>
+      <button class="modal-close" onclick="closeGroupDetailModal()">&#10005;</button>
+    </div>
+    <div id="groupNameEditRow" style="display:none;margin-bottom:14px;">
+      <input class="modal-input" id="groupNameEditInput" type="text" maxlength="40" value="${escHtml(data.name)}">
+      <div class="modal-error" id="groupNameEditError"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="add-member-btn" onclick="saveGroupName()">Save</button>
+        <button class="member-action" onclick="cancelEditGroupName()">Cancel</button>
+      </div>
+    </div>
+    <div class="section-label">Members &middot; ${members.length}</div>
+    <div id="memberList">${memberRowsHtml}</div>
+    ${addFriendHtml}
+    <button class="invite-btn" style="margin-top:18px;" id="groupInviteBtn" onclick="copyGroupInviteLink()">Copy invite link</button>
+    <div class="invite-confirm" id="groupInviteConfirm">&#10003; Link copied to clipboard!</div>
+    ${isCreator ? '<button class="danger-btn" id="deleteGroupBtn" onclick="handleDeleteGroupClick()">Delete Group</button>' : ''}
+  `;
+}
+
+async function removeGroupMember(username) {
+  if (!currentGroupId) return;
+  const isSelf = username.toLowerCase() === (currentUsername || '').toLowerCase();
+  const confirmMsg = isSelf ? 'Leave this group?' : ('Remove ' + username + ' from the group?');
+  if (!window.confirm(confirmMsg)) return;
+
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/members/' + encodeURIComponent(username), {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not remove member.');
+    if (isSelf) {
+      closeGroupDetailModal();
+      showToast('Left group.');
+      loadGroupsList();
+    } else {
+      showToast('Member removed.');
+      await refreshGroupDetail();
+      loadGroupsList();
+    }
+  } catch(e) {
+    showToast(e.message);
+  }
+}
+
+async function addGroupMember() {
+  const select = document.getElementById('addMemberSelect');
+  if (!select || !select.value) return;
+  const username = select.value;
+  const btn = document.getElementById('addMemberBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/members', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not add member.');
+    showToast('Added ' + username + ' to group.');
+    await refreshGroupDetail();
+    loadGroupsList();
+  } catch(e) {
+    showToast(e.message);
+    btn.disabled = false;
+  }
+}
+
+function startEditGroupName() {
+  document.getElementById('groupNameDisplay').style.display = 'none';
+  document.getElementById('groupNameEditRow').style.display = 'block';
+  document.getElementById('groupNameEditError').textContent = '';
+  document.getElementById('groupNameEditInput').focus();
+}
+
+function cancelEditGroupName() {
+  document.getElementById('groupNameDisplay').style.display = 'flex';
+  document.getElementById('groupNameEditRow').style.display = 'none';
+}
+
+async function saveGroupName() {
+  const input = document.getElementById('groupNameEditInput');
+  const errorEl = document.getElementById('groupNameEditError');
+  const name = input.value.trim();
+  errorEl.textContent = '';
+  if (!name) { errorEl.textContent = 'Group name is required.'; return; }
+
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not rename group.');
+    showToast('Group renamed.');
+    await refreshGroupDetail();
+    loadGroupsList();
+  } catch(e) {
+    errorEl.textContent = e.message;
+  }
+}
+
+async function copyGroupInviteLink() {
+  const btn = document.getElementById('groupInviteBtn');
+  btn.disabled = true;
+  btn.textContent = 'Getting link...';
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/invite', { method: 'POST', headers: authHeaders() });
+    if (!res.ok) throw new Error();
+    const { token } = await res.json();
+    const link = `https://vaultiac.com/vaultiac-friends.html?joinGroup=${token}`;
+    await navigator.clipboard.writeText(link);
+    const confirmEl = document.getElementById('groupInviteConfirm');
+    confirmEl.style.display = 'block';
+    btn.textContent = 'Copy invite link';
+    btn.disabled = false;
+    setTimeout(() => { confirmEl.style.display = 'none'; }, 3000);
+  } catch(e) {
+    btn.textContent = 'Copy invite link';
+    btn.disabled = false;
+    showToast('Could not copy link. Try again.');
+  }
+}
+
+let deleteGroupConfirmPending = false;
+function handleDeleteGroupClick() {
+  const btn = document.getElementById('deleteGroupBtn');
+  if (!deleteGroupConfirmPending) {
+    deleteGroupConfirmPending = true;
+    btn.textContent = 'Tap again to confirm delete';
+    setTimeout(() => {
+      deleteGroupConfirmPending = false;
+      const b = document.getElementById('deleteGroupBtn');
+      if (b) b.textContent = 'Delete Group';
+    }, 3000);
+    return;
+  }
+  deleteGroupConfirmPending = false;
+  performDeleteGroup();
+}
+
+async function performDeleteGroup() {
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not delete group.');
+    closeGroupDetailModal();
+    showToast('Group deleted.');
+    loadGroupsList();
+  } catch(e) {
+    showToast(e.message);
+  }
+}
+
+// ---- JOIN GROUP VIA LINK ----
+let pendingGroupObserverAttached = false;
+
+async function handleJoinGroupParam() {
+  const params = new URLSearchParams(window.location.search);
+  const joinToken = params.get('joinGroup');
+  if (joinToken) {
+    sessionStorage.setItem('pending_group_join', joinToken);
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  const storedToken = sessionStorage.getItem('pending_group_join');
+  if (!storedToken) return;
+
+  const token = getToken();
+  const user = getCurrentUser();
+  if (!token || !user) {
+    watchForAuthThenJoinGroup();
+    return;
+  }
+  await processGroupJoin(storedToken);
+}
+
+// No callback exists on the shared auth modal (auth.js), so watch its overlay
+// for the 'open' class being removed to detect signup/login completing.
+function watchForAuthThenJoinGroup() {
+  if (pendingGroupObserverAttached) return;
+  const overlay = document.getElementById('vaModalOverlay');
+  if (!overlay) return;
+  pendingGroupObserverAttached = true;
+
+  const observer = new MutationObserver(() => {
+    if (overlay.classList.contains('open')) return;
+    const token = getToken();
+    const user = getCurrentUser();
+    if (!token || !user) return;
+
+    observer.disconnect();
+    pendingGroupObserverAttached = false;
+
+    const finish = () => {
+      const storedToken = sessionStorage.getItem('pending_group_join');
+      if (storedToken) processGroupJoin(storedToken);
+    };
+    if (document.getElementById('loggedInContent').style.display !== 'block') {
+      activateLoggedInView(user).then(finish);
+    } else {
+      finish();
+    }
+  });
+  observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+}
+
+async function processGroupJoin(token) {
+  sessionStorage.removeItem('pending_group_join');
+  try {
+    const res = await fetch('/api/groups/invite-info/' + encodeURIComponent(token));
+    if (res.status === 404) {
+      showToast('That group invite link is no longer valid.');
+      return;
+    }
+    if (!res.ok) throw new Error();
+    const info = await res.json();
+    showJoinGroupPrompt(token, info);
+  } catch(e) {
+    showToast('Could not load group invite. Please try the link again.');
+  }
+}
+
+function showJoinGroupPrompt(token, info) {
+  const existing = document.getElementById('joinGroupBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'joinGroupBanner';
+  banner.className = 'section';
+  banner.style.cssText = 'width:100%;max-width:480px;margin:0 auto 16px;';
+  banner.innerHTML = `
+    <div class="card amber-border">
+      <div class="section-label">Group Invite</div>
+      <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:4px;">Join "${escHtml(info.name)}"?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${info.member_count} member${info.member_count === 1 ? '' : 's'}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="req-accept" style="flex:1;" onclick="confirmJoinGroup('${escJs(token)}')">Join Group</button>
+        <button class="req-decline" style="flex:1;" onclick="document.getElementById('joinGroupBanner').remove()">Dismiss</button>
+      </div>
+    </div>`;
+  const loggedInContent = document.getElementById('loggedInContent');
+  loggedInContent.insertBefore(banner, loggedInContent.firstChild);
+}
+
+async function confirmJoinGroup(token) {
+  try {
+    const res = await fetch('/api/groups/join/' + encodeURIComponent(token), { method: 'POST', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not join group.');
+    const banner = document.getElementById('joinGroupBanner');
+    if (banner) banner.remove();
+    showToast('Joined group!');
+    loadGroupsList();
+  } catch(e) {
+    showToast(e.message);
+  }
+}
+
 // ===== UTILS =====
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escJs(s) {
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 </script>
 <script src="/js/api.js"></script>

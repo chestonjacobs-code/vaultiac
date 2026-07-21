@@ -210,6 +210,77 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .recap-dismiss{font-family:inherit;font-size:12px;font-weight:700;color:var(--muted);
   background:none;border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;transition:.2s;}
 .recap-dismiss:hover{color:var(--paper);border-color:rgba(255,255,255,.2);}
+
+/* YOUR GROUPS (Friend Groups) */
+.groups-card{width:100%;max-width:480px;border-radius:20px;padding:20px;margin-top:16px;
+  background:linear-gradient(155deg,#16121e,#0d0b12);border:1px solid var(--line);
+  position:relative;z-index:2;}
+.group-create-btn{font-family:inherit;font-size:12px;font-weight:700;color:var(--gold);
+  background:rgba(232,194,122,.08);border:1px solid rgba(232,194,122,.3);border-radius:10px;
+  padding:9px 14px;cursor:pointer;transition:.2s;margin-bottom:14px;}
+.group-create-btn:hover{background:rgba(232,194,122,.14);}
+.group-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  cursor:pointer;transition:background .15s;}
+.group-row:hover{background:rgba(255,255,255,.03);}
+.group-row:last-child{border-bottom:none;padding-bottom:0;}
+.group-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--holo2),var(--holo3));
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;}
+.group-info{flex:1;min-width:0;}
+.group-name{font-size:14px;font-weight:700;color:var(--paper);}
+.group-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.group-creator-badge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--gold);background:rgba(232,194,122,.12);border:1px solid rgba(232,194,122,.3);
+  padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+.groups-empty{text-align:center;padding:20px 8px;}
+.groups-empty .es-icon{font-size:30px;margin-bottom:8px;opacity:.6;}
+.groups-empty .es-title{font-family:"Fraunces",serif;font-weight:700;font-size:15px;margin-bottom:4px;}
+.groups-empty .es-sub{font-size:12px;color:var(--muted);line-height:1.5;}
+
+/* GROUPS MODALS */
+.modal-overlay{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-panel{background:#16121e;border:1px solid var(--line);border-radius:20px;padding:24px 22px;
+  width:100%;max-width:420px;max-height:85vh;overflow-y:auto;
+  transform:translateY(16px);transition:transform .25s;}
+.modal-overlay.open .modal-panel{transform:translateY(0);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;
+  padding:4px 8px;border-radius:8px;transition:.2s;flex:none;}
+.modal-close:hover{color:var(--paper);background:rgba(255,255,255,.08);}
+.modal-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;font-family:inherit;font-size:14px;color:var(--paper);outline:none;margin-bottom:10px;}
+.modal-input:focus{border-color:rgba(232,194,122,.4);}
+.modal-error{font-size:12px;color:#f09090;min-height:16px;margin-bottom:6px;}
+.modal-submit-btn{width:100%;font-family:inherit;font-size:14px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:12px;
+  padding:13px;cursor:pointer;transition:.2s;}
+.modal-submit-btn:hover{opacity:.9;}
+
+.group-modal-name{font-family:"Fraunces",serif;font-weight:700;font-size:20px;color:var(--paper);}
+.edit-pencil{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:6px;}
+.edit-pencil:hover{color:var(--gold);}
+.member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.member-row:last-child{border-bottom:none;}
+.member-name{flex:1;font-size:13px;font-weight:600;color:var(--paper);min-width:0;}
+.member-action{font-family:inherit;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);
+  transition:.2s;flex:none;}
+.member-action:hover{color:var(--paper);}
+.member-action.danger{color:#f09090;border-color:rgba(240,144,144,.25);}
+.member-action.danger:hover{background:rgba(240,144,144,.08);}
+.add-member-row{display:flex;gap:8px;margin-top:10px;}
+.add-member-select{flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--line);
+  border-radius:10px;padding:9px 10px;font-family:inherit;font-size:12px;color:var(--paper);outline:none;}
+.add-member-btn{font-family:inherit;font-size:12px;font-weight:700;color:#0c0a10;
+  background:linear-gradient(90deg,var(--holo2),var(--holo3));border:none;border-radius:10px;
+  padding:9px 14px;cursor:pointer;flex:none;transition:.2s;}
+.add-member-btn:disabled{opacity:.4;cursor:default;}
+.danger-btn{width:100%;font-family:inherit;font-size:13px;font-weight:700;color:#f09090;
+  background:rgba(240,144,144,.06);border:1px solid rgba(240,144,144,.25);border-radius:12px;
+  padding:12px;cursor:pointer;transition:.2s;margin-top:16px;}
+.danger-btn:hover{background:rgba(240,144,144,.12);}
 </style>
 </head>
 <body>
@@ -280,6 +351,24 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
   <button class="recap-dismiss" id="recapDismissBtn">Got it</button>
 </div>
 
+<!-- CREATE GROUP MODAL -->
+<div class="modal-overlay" id="createGroupModal">
+  <div class="modal-panel" style="max-width:360px;">
+    <div class="modal-head">
+      <div class="personal-section-label" style="margin-bottom:0;">Create Group</div>
+      <button class="modal-close" onclick="closeCreateGroupModal()">&#10005;</button>
+    </div>
+    <input class="modal-input" id="createGroupNameInput" type="text" maxlength="40" placeholder="Group name">
+    <div class="modal-error" id="createGroupError"></div>
+    <button class="modal-submit-btn" id="createGroupSubmitBtn" onclick="submitCreateGroup()">Create</button>
+  </div>
+</div>
+
+<!-- GROUP DETAIL MODAL -->
+<div class="modal-overlay" id="groupDetailModal">
+  <div class="modal-panel" id="groupDetailBody"></div>
+</div>
+
 <!-- CATEGORY FILTER (hidden on personal) -->
 <div class="cat-filter" id="catFilter">
   <button class="cf-btn active">&#9889; Pokemon</button>
@@ -314,6 +403,18 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
     <button class="invite-btn" onclick="VaultAuth.openModal('signup')">Create free account</button>
   </div>
 </div>
+
+<!-- YOUR GROUPS (Friend Groups) -->
+<div class="groups-card" id="groupsSection" style="display:none;">
+  <div class="personal-section-label">Your Groups</div>
+  <button class="group-create-btn" onclick="openCreateGroupModal()">+ Create Group</button>
+  <div id="groupsList">
+    <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">Loading...</div>
+  </div>
+</div>
+
+<!-- BOTTOM INVITE LINK (relocated below Your Groups so it stays last) -->
+<div id="friendsBottomInvite" style="display:none;width:100%;max-width:480px;margin-top:16px;"></div>
 
 <!-- PERSONAL PANEL -->
 <div class="personal-panel" id="personalPanel" style="display:none;">
@@ -591,6 +692,8 @@ function switchMain(tab) {
   document.getElementById('friendsEmpty').style.display = tab==='friends'?'block':'none';
   if(tab==='friends') updateFriendsPanel();
   document.getElementById('friendsList').style.display = 'none';
+  document.getElementById('groupsSection').style.display = tab === 'friends' ? 'block' : 'none';
+  if (tab !== 'friends') document.getElementById('friendsBottomInvite').style.display = 'none';
   document.getElementById('personalPanel').style.display = tab === 'personal' ? 'block' : 'none';
   document.getElementById('subtabs').style.display = tab === 'personal' ? 'none' : 'flex';
   document.getElementById('catFilter').style.display = tab === 'personal' ? 'none' : 'flex';
@@ -603,6 +706,7 @@ function switchMain(tab) {
   if (tab === 'friends') {
     loadFriendsTab();
     loadWeeklyRecap();
+    loadGroupsTab();
   }
 }
 
@@ -618,6 +722,7 @@ async function loadFriendsTab() {
     invBtn.onclick = () => openAuthModal('login');
     document.getElementById('inviteConfirm').textContent = '';
     document.getElementById('inviteConfirm').style.display = 'none';
+    document.getElementById('friendsBottomInvite').style.display = 'none';
     return;
   }
 
@@ -640,6 +745,7 @@ async function loadFriendsTab() {
     if (friends.length === 0) {
       fe.style.display = 'block';
       document.getElementById('friendsList').style.display = 'none';
+      document.getElementById('friendsBottomInvite').style.display = 'none';
     } else {
       fe.style.display = 'none';
       renderFriendsList();
@@ -695,10 +801,11 @@ async function renderFriendsList() {
       fl.appendChild(row);
     });
 
-    // Always show invite link at bottom of friends list
-    const invRow = document.createElement('div');
-    invRow.style.cssText = 'margin-top:16px;text-align:center;';
-    invRow.innerHTML = `
+    // Always show invite link below Your Groups (relocated out of #friendsList
+    // so the Groups section can sit between the friend rows and this link)
+    const bottomInvite = document.getElementById('friendsBottomInvite');
+    bottomInvite.style.display = 'block';
+    bottomInvite.innerHTML = `
       <button id="friendsInviteBtn" style="font-family:inherit;font-size:13px;font-weight:700;color:#9a93a6;
         background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);border-radius:12px;
         padding:12px 20px;cursor:pointer;width:100%;transition:.2s;"
@@ -708,7 +815,6 @@ async function renderFriendsList() {
       </button>
       <div id="friendsInviteConfirm" style="font-size:12px;color:#7ce8d6;height:18px;margin-top:6px;opacity:0;transition:.2s;"></div>
     `;
-    fl.appendChild(invRow);
     document.getElementById('friendsInviteBtn').addEventListener('click', async function() {
       this.textContent = '⏳ Generating link…';
       this.disabled = true;
@@ -863,6 +969,7 @@ let pendingFriendRequest = null;
 (async function handlePageParams() {
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
+  const joinGroupToken = params.get('joinGroup');
   const tabParam = params.get('tab');
 
   // Strip params from URL
@@ -893,6 +1000,28 @@ let pendingFriendRequest = null;
     if (user) {
       sessionStorage.removeItem('pending_invite_token');
       await showAddFriendPrompt(storedToken);
+    }
+  }
+
+  // Handle fresh ?joinGroup=TOKEN (mirrors the ?invite= flow above)
+  if (joinGroupToken) {
+    sessionStorage.setItem('pending_group_join_token', joinGroupToken);
+
+    const user = await VaultAuth.getUser();
+    if (!user) {
+      showToast('Sign in to join this group.');
+    } else {
+      await showJoinGroupPrompt(joinGroupToken);
+    }
+  }
+
+  // Check sessionStorage for group-join token stored from pre-auth redirect
+  const storedGroupToken = sessionStorage.getItem('pending_group_join_token');
+  if (storedGroupToken && !joinGroupToken) {
+    const user = await VaultAuth.getUser();
+    if (user) {
+      sessionStorage.removeItem('pending_group_join_token');
+      await showJoinGroupPrompt(storedGroupToken);
     }
   }
 
@@ -1018,6 +1147,78 @@ function showAddFriendBanner(fromUsername, token, avatarUrl) {
   });
 }
 
+async function showJoinGroupPrompt(token) {
+  try {
+    const res = await fetch('/api/groups/invite-info/' + encodeURIComponent(token));
+    if (res.status === 404) {
+      showToast('That group invite link is no longer valid.');
+      return;
+    }
+    const json = await res.json();
+    if (!res.ok) throw new Error();
+    if (mainTab !== 'friends') {
+      switchMain('friends');
+    }
+    showJoinGroupBanner(token, json);
+  } catch(e) {
+    showToast('Could not load group invite. Please try the link again.');
+  }
+}
+
+function showJoinGroupBanner(token, info) {
+  const existing = document.getElementById('joinGroupBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'joinGroupBanner';
+  banner.style.cssText = `
+    width:100%;max-width:480px;border-radius:16px;padding:18px 20px;margin-bottom:14px;
+    background:linear-gradient(155deg,#1a1628,#0d0b12);border:1px solid rgba(167,139,250,.35);
+    position:relative;z-index:2;animation:rise .4s ease forwards;
+  `;
+  banner.innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:#f3eee6;margin-bottom:4px;">Join "${escHtml(info.name)}"?</div>
+    <div style="font-size:12px;color:#9a93a6;margin-bottom:14px;">${info.member_count} member${info.member_count === 1 ? '' : 's'} &middot; wants you to join their group</div>
+    <div style="display:flex;gap:8px;">
+      <button id="joinGroupAccept" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#0c0a10;
+        background:linear-gradient(90deg,#a78bfa,#f0a6c8);border:none;border-radius:10px;padding:10px;cursor:pointer;">
+        Join Group
+      </button>
+      <button id="joinGroupDecline" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;color:#9a93a6;
+        background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;cursor:pointer;">
+        Dismiss
+      </button>
+    </div>
+  `;
+
+  const tabs = document.querySelector('.tabs');
+  if (tabs) tabs.insertAdjacentElement('afterend', banner);
+
+  document.getElementById('joinGroupAccept').addEventListener('click', async () => {
+    const btn = document.getElementById('joinGroupAccept');
+    btn.disabled = true;
+    btn.textContent = 'Joining...';
+    try {
+      const authToken = VaultAuth.getToken();
+      const res = await fetch('/api/groups/join/' + encodeURIComponent(token), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not join group.');
+      banner.remove();
+      showToast('Joined group!');
+      loadGroupsTab();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Join Group';
+      showToast(e.message);
+    }
+  });
+
+  document.getElementById('joinGroupDecline').addEventListener('click', () => banner.remove());
+}
+
 function showFriendRequestBanner(fromUsername, requestId, avatarUrl) {
   const banner = document.getElementById('frBanner');
   document.getElementById('frBannerAvatar').innerHTML = vaAvatarHtml(avatarUrl, fromUsername, 26);
@@ -1118,6 +1319,344 @@ function showToast(msg) {
   t.style.opacity = '1';
   clearTimeout(t._hide);
   t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
+}
+
+// ===== GROUPS =====
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJs(s) {
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+let groupsFriendsCache = [];
+let currentGroupId = null;
+
+async function loadGroupsTab() {
+  const token = VaultAuth.getToken();
+  if (!token) return;
+  try {
+    const [groupsRes, friendsRes] = await Promise.all([
+      fetch('/api/groups', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/friends/list', { headers: { 'Authorization': 'Bearer ' + token } })
+    ]);
+    if (friendsRes.ok) {
+      const fj = await friendsRes.json();
+      groupsFriendsCache = fj.data || [];
+    }
+    if (!groupsRes.ok) return;
+    const gj = await groupsRes.json();
+    renderGroupsList(gj.data || []);
+  } catch(e) {}
+}
+
+function renderGroupsList(groups) {
+  const el = document.getElementById('groupsList');
+  if (groups.length === 0) {
+    el.innerHTML = `
+      <div class="groups-empty">
+        <div class="es-icon">🧑‍🤝‍🧑</div>
+        <div class="es-title">No groups yet</div>
+        <div class="es-sub">Create a group to organize friends for shared challenges.</div>
+      </div>`;
+    return;
+  }
+  el.innerHTML = groups.map(g => `
+    <div class="group-row" onclick="openGroupDetail(${g.id})">
+      <div class="group-icon">🧑‍🤝‍🧑</div>
+      <div class="group-info">
+        <div class="group-name">${escHtml(g.name)}${g.is_creator ? '<span class="group-creator-badge">Creator</span>' : ''}</div>
+        <div class="group-sub">${g.member_count} member${g.member_count === 1 ? '' : 's'}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ---- CREATE GROUP MODAL ----
+function openCreateGroupModal() {
+  document.getElementById('createGroupNameInput').value = '';
+  document.getElementById('createGroupError').textContent = '';
+  document.getElementById('createGroupModal').classList.add('open');
+  document.getElementById('createGroupNameInput').focus();
+}
+function closeCreateGroupModal() {
+  document.getElementById('createGroupModal').classList.remove('open');
+}
+async function submitCreateGroup() {
+  const name = document.getElementById('createGroupNameInput').value.trim();
+  const errorEl = document.getElementById('createGroupError');
+  const btn = document.getElementById('createGroupSubmitBtn');
+  errorEl.textContent = '';
+  if (!name) { errorEl.textContent = 'Group name is required.'; return; }
+  const token = VaultAuth.getToken();
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+  try {
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not create group.');
+    closeCreateGroupModal();
+    showToast('Group created!');
+    loadGroupsTab();
+  } catch(e) {
+    errorEl.textContent = e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Create';
+}
+
+// ---- GROUP DETAIL MODAL ----
+async function openGroupDetail(groupId) {
+  currentGroupId = groupId;
+  document.getElementById('groupDetailBody').innerHTML =
+    '<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;">Loading...</div>';
+  document.getElementById('groupDetailModal').classList.add('open');
+  await refreshGroupDetail();
+}
+function closeGroupDetailModal() {
+  document.getElementById('groupDetailModal').classList.remove('open');
+  currentGroupId = null;
+}
+async function refreshGroupDetail() {
+  if (!currentGroupId) return;
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 404) {
+      closeGroupDetailModal();
+      showToast('This group no longer exists.');
+      loadGroupsTab();
+      return;
+    }
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderGroupDetail(data);
+  } catch(e) {
+    document.getElementById('groupDetailBody').innerHTML =
+      '<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;">Could not load group.</div>';
+  }
+}
+
+function renderGroupDetail(data) {
+  const isCreator = data.creator_username === username;
+  const members = data.members || [];
+  const memberUsernamesLower = members.map(m => m.username.toLowerCase());
+  const availableFriends = groupsFriendsCache.filter(f => !memberUsernamesLower.includes(f.username.toLowerCase()));
+
+  const memberRowsHtml = members.map(m => {
+    let action = '';
+    if (isCreator && !m.is_creator) {
+      action = `<button class="member-action danger" onclick="removeGroupMember('${escJs(m.username)}')">Remove</button>`;
+    } else if (!isCreator && m.username === username) {
+      action = `<button class="member-action" onclick="removeGroupMember('${escJs(m.username)}')">Leave</button>`;
+    }
+    return `
+      <div class="member-row">
+        ${vaAvatarHtml(m.avatar_url, m.username, 30)}
+        <div class="member-name">${escHtml(m.username)}${m.is_creator ? '<span class="group-creator-badge">Creator</span>' : ''}</div>
+        ${action}
+      </div>`;
+  }).join('');
+
+  let addFriendHtml = '';
+  if (isCreator) {
+    if (availableFriends.length > 0) {
+      addFriendHtml = `
+        <div class="personal-section-label" style="margin-top:18px;">Add Friend</div>
+        <div class="add-member-row">
+          <select class="add-member-select" id="addMemberSelect">
+            ${availableFriends.map(f => `<option value="${escHtml(f.username)}">${escHtml(f.username)}</option>`).join('')}
+          </select>
+          <button class="add-member-btn" id="addMemberBtn" onclick="addGroupMember()">Add</button>
+        </div>`;
+    } else {
+      const explain = groupsFriendsCache.length > 0
+        ? 'All your friends are already in this group.'
+        : 'Add friends first, then invite them to a group.';
+      addFriendHtml = `
+        <div class="personal-section-label" style="margin-top:18px;">Add Friend</div>
+        <div style="font-size:12px;color:var(--muted);">${explain}</div>`;
+    }
+  }
+
+  document.getElementById('groupDetailBody').innerHTML = `
+    <div class="modal-head">
+      <div id="groupNameDisplay" style="display:flex;align-items:center;">
+        <span class="group-modal-name" id="groupNameText">${escHtml(data.name)}</span>
+        ${isCreator ? '<button class="edit-pencil" onclick="startEditGroupName()">&#9998;</button>' : ''}
+      </div>
+      <button class="modal-close" onclick="closeGroupDetailModal()">&#10005;</button>
+    </div>
+    <div id="groupNameEditRow" style="display:none;margin-bottom:14px;">
+      <input class="modal-input" id="groupNameEditInput" type="text" maxlength="40" value="${escHtml(data.name)}">
+      <div class="modal-error" id="groupNameEditError"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="add-member-btn" onclick="saveGroupName()">Save</button>
+        <button class="member-action" onclick="cancelEditGroupName()">Cancel</button>
+      </div>
+    </div>
+    <div class="personal-section-label">Members &middot; ${members.length}</div>
+    <div id="memberList">${memberRowsHtml}</div>
+    ${addFriendHtml}
+    <button class="modal-submit-btn" style="margin-top:18px;" id="groupInviteBtn" onclick="copyGroupInviteLink()">Copy invite link</button>
+    <div class="invite-confirm" id="groupInviteConfirm">&#10003; Link copied to clipboard!</div>
+    ${isCreator ? '<button class="danger-btn" id="deleteGroupBtn" onclick="handleDeleteGroupClick()">Delete Group</button>' : ''}
+  `;
+}
+
+async function removeGroupMember(uname) {
+  if (!currentGroupId) return;
+  const isSelf = uname.toLowerCase() === (username || '').toLowerCase();
+  const confirmMsg = isSelf ? 'Leave this group?' : ('Remove ' + uname + ' from the group?');
+  if (!window.confirm(confirmMsg)) return;
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/members/' + encodeURIComponent(uname), {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not remove member.');
+    if (isSelf) {
+      closeGroupDetailModal();
+      showToast('Left group.');
+      loadGroupsTab();
+    } else {
+      showToast('Member removed.');
+      await refreshGroupDetail();
+      loadGroupsTab();
+    }
+  } catch(e) {
+    showToast(e.message);
+  }
+}
+
+async function addGroupMember() {
+  const select = document.getElementById('addMemberSelect');
+  if (!select || !select.value) return;
+  const uname = select.value;
+  const btn = document.getElementById('addMemberBtn');
+  btn.disabled = true;
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/members', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: uname })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not add member.');
+    showToast('Added ' + uname + ' to group.');
+    await refreshGroupDetail();
+    loadGroupsTab();
+  } catch(e) {
+    showToast(e.message);
+    btn.disabled = false;
+  }
+}
+
+function startEditGroupName() {
+  document.getElementById('groupNameDisplay').style.display = 'none';
+  document.getElementById('groupNameEditRow').style.display = 'block';
+  document.getElementById('groupNameEditError').textContent = '';
+  document.getElementById('groupNameEditInput').focus();
+}
+function cancelEditGroupName() {
+  document.getElementById('groupNameDisplay').style.display = 'flex';
+  document.getElementById('groupNameEditRow').style.display = 'none';
+}
+async function saveGroupName() {
+  const input = document.getElementById('groupNameEditInput');
+  const errorEl = document.getElementById('groupNameEditError');
+  const name = input.value.trim();
+  errorEl.textContent = '';
+  if (!name) { errorEl.textContent = 'Group name is required.'; return; }
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not rename group.');
+    showToast('Group renamed.');
+    await refreshGroupDetail();
+    loadGroupsTab();
+  } catch(e) {
+    errorEl.textContent = e.message;
+  }
+}
+
+async function copyGroupInviteLink() {
+  const btn = document.getElementById('groupInviteBtn');
+  const confirmEl = document.getElementById('groupInviteConfirm');
+  btn.disabled = true;
+  btn.textContent = 'Getting link...';
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId + '/invite', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error();
+    const inviteData = await res.json();
+    const link = 'https://vaultiac.com/vaultiac-leaderboard.html?joinGroup=' + inviteData.token;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch(clipErr) {
+      const inp = document.createElement('input');
+      inp.style.cssText = 'position:fixed;opacity:0;';
+      inp.value = link;
+      document.body.appendChild(inp);
+      inp.focus(); inp.select();
+      document.execCommand('copy');
+      document.body.removeChild(inp);
+    }
+    confirmEl.textContent = '✓ Link copied!';
+    confirmEl.classList.add('show');
+    setTimeout(() => confirmEl.classList.remove('show'), 3000);
+  } catch(e) {
+    showToast('Could not copy link. Try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Copy invite link';
+}
+
+let deleteGroupConfirmPending = false;
+function handleDeleteGroupClick() {
+  const btn = document.getElementById('deleteGroupBtn');
+  if (!deleteGroupConfirmPending) {
+    deleteGroupConfirmPending = true;
+    btn.textContent = 'Tap again to confirm delete';
+    setTimeout(() => {
+      deleteGroupConfirmPending = false;
+      const b = document.getElementById('deleteGroupBtn');
+      if (b) b.textContent = 'Delete Group';
+    }, 3000);
+    return;
+  }
+  deleteGroupConfirmPending = false;
+  performDeleteGroup();
+}
+async function performDeleteGroup() {
+  const token = VaultAuth.getToken();
+  try {
+    const res = await fetch('/api/groups/' + currentGroupId, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not delete group.');
+    closeGroupDetailModal();
+    showToast('Group deleted.');
+    loadGroupsTab();
+  } catch(e) {
+    showToast(e.message);
+  }
 }
 
 window.addEventListener('load', loadLeaderboard);

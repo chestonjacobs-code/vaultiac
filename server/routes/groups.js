@@ -109,14 +109,9 @@ router.post('/join/:token', requireAuth, async (req, res) => {
 router.get('/:id', requireAuth, async (req, res) => {
   const groupId = req.params.id;
   try {
-    const membership = await pool.query(
-      'SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2',
-      [groupId, req.user.id]
-    );
-    if (membership.rows.length === 0) {
-      return res.status(403).json({ error: 'You are not a member of this group.' });
-    }
-
+    // Check the group exists before membership — otherwise a deleted group
+    // (whose group_members rows are cascade-deleted along with it) always
+    // reports 403 "not a member" instead of 404, even for its own creator.
     const groupRes = await pool.query(
       `SELECT g.id, g.name, g.creator_id, u.username AS creator_username
        FROM groups g
@@ -126,6 +121,14 @@ router.get('/:id', requireAuth, async (req, res) => {
     );
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found.' });
     const group = groupRes.rows[0];
+
+    const membership = await pool.query(
+      'SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2',
+      [groupId, req.user.id]
+    );
+    if (membership.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not a member of this group.' });
+    }
 
     const membersRes = await pool.query(
       `SELECT u.username, u.avatar_url

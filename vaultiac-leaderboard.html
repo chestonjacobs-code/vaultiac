@@ -966,7 +966,14 @@ let pendingFriendRequest = null;
 
 // Handle ?invite=TOKEN and ?tab=friends on page load
 // Handle ?invite=TOKEN and ?tab=friends on page load
-(async function handlePageParams() {
+//
+// Deferred to DOMContentLoaded rather than run immediately: this inline
+// script block executes before the later <script src="/js/auth.js"> tag,
+// so calling VaultAuth.getUser() here synchronously throws (VaultAuth is
+// not yet defined) and silently aborts the whole async IIFE — breaking
+// both this and the ?joinGroup= handling below. By DOMContentLoaded, every
+// blocking <script> tag on the page (including auth.js) has already run.
+async function handlePageParams() {
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
   const joinGroupToken = params.get('joinGroup');
@@ -1035,7 +1042,13 @@ let pendingFriendRequest = null;
       showAddFriendBanner(req.from_username, null, req.avatar_url || null);
     } catch(e) { /* silent */ }
   }
-})();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', handlePageParams);
+} else {
+  handlePageParams();
+}
 
 async function showAddFriendPrompt(token) {
   try {

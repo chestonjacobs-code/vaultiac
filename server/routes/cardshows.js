@@ -95,7 +95,7 @@ router.get('/search', async (req, res) => {
 
   try {
     const params = [];
-    let query = `SELECT * FROM card_shows WHERE status = 'published' AND lat IS NOT NULL AND lng IS NOT NULL`;
+    let query = `SELECT * FROM card_shows WHERE status = 'published' AND lat IS NOT NULL AND lng IS NOT NULL AND COALESCE(date_end, date_start) >= CURRENT_DATE`;
     if (date) {
       params.push(date);
       query += ` AND date_start = $${params.length}`;

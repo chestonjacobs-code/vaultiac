@@ -357,6 +357,12 @@ section{position:relative;z-index:2;width:100%;max-width:1100px;margin:0 auto;pa
 .pack-friends .pack-art{background:radial-gradient(circle at 50% 40%,#3a2808,#1a1002 70%);}
 .pack-friends.pack-wrap:not(.pack-soon) .pack::after{background:radial-gradient(circle,rgba(245,166,35,.25),transparent 70%);}
 
+.pack-cardshows .pack-front{background:linear-gradient(160deg,#0a1a18,#0e2820 40%,#081a14);}
+.pack-cardshows .pack-top{background:linear-gradient(90deg,#0a3028,#1a6050,#5ad8b8,#1a6050,#0a3028);color:#020c0a;}
+.pack-cardshows .pack-bottom{background:linear-gradient(90deg,#081210,#0e2018);}
+.pack-cardshows .pack-art{background:radial-gradient(circle at 50% 40%,#1a4838,#082018 70%);}
+.pack-cardshows.pack-wrap:not(.pack-soon) .pack::after{background:radial-gradient(circle,rgba(90,216,184,.25),transparent 70%);}
+
 /* pack canvas fills art area */
 .pack-canvas{width:100%;height:100%;display:block;}
 .pack-wrap:not(.pack-soon) .pack::after{
@@ -864,6 +870,23 @@ footer{position:relative;z-index:2;width:100%;border-top:1px solid var(--line);
         <div class="pack-name">Card Grader</div>
         <div class="pack-status"><span class="live-badge">● Live</span></div>
         <div class="pack-desc">Upload any card — AI estimates PSA, CGC, TAG, and Beckett grades instantly.</div>
+      </div>
+    </div>
+
+    <!-- CARD SHOWS — live -->
+    <div class="pack-wrap pack-cardshows reveal" data-href="vaultiac-card-shows.html">
+      <div class="pack">
+        <div class="pack-front">
+          <div class="pack-top">VAULTIAC</div>
+          <div class="pack-tear"></div>
+          <div class="pack-art"><canvas class="pack-canvas" id="pack-cardshows" width="160" height="180"></canvas></div>
+          <div class="pack-bottom" style="color:#7ce8d6;">Card Shows</div>
+        </div>
+      </div>
+      <div class="pack-label">
+        <div class="pack-name">Card Shows</div>
+        <div class="pack-status"><span class="live-badge">● Live</span></div>
+        <div class="pack-desc">Find upcoming Pokémon and sports card shows near you.</div>
       </div>
     </div>
 
@@ -1546,9 +1569,79 @@ function drawPackFriends(){
   });
 }
 
+function drawPackCardShows(){
+  const c=document.getElementById('pack-cardshows');
+  if(!c) return;
+  const x=c.getContext('2d'), W=c.width, H=c.height;
+  // teal-dark bg
+  const bg=x.createRadialGradient(W/2,H*.4,0,W/2,H*.5,W*.9);
+  bg.addColorStop(0,'#0e2c24'); bg.addColorStop(.6,'#081810'); bg.addColorStop(1,'#040c08');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+
+  // card silhouette peeking behind the calendar, tilted right
+  x.save(); x.translate(W*.62,H*.52); x.rotate(.16);
+  const cw=42,ch=58;
+  x.shadowColor='rgba(0,0,0,.6)'; x.shadowBlur=14; x.shadowOffsetY=8;
+  _rrect(x,-cw/2,-ch/2,cw,ch,5);
+  const cg=x.createLinearGradient(-cw/2,-ch/2,cw/2,ch/2);
+  cg.addColorStop(0,'#1a6050'); cg.addColorStop(.5,'#5ad8b8'); cg.addColorStop(1,'#12483c');
+  x.fillStyle=cg; x.fill(); x.shadowBlur=0; x.shadowOffsetY=0;
+  _rrect(x,-cw/2+3,-ch/2+3,cw-6,ch-6,3);
+  const ci=x.createLinearGradient(0,-ch/2,0,ch/2);
+  ci.addColorStop(0,'#12283a'); ci.addColorStop(1,'#0a1a28'); x.fillStyle=ci; x.fill();
+  x.restore();
+
+  // calendar body — front and center
+  x.save(); x.translate(W*.44,H*.5);
+  const calW=58, calH=54;
+  x.shadowColor='rgba(0,0,0,.7)'; x.shadowBlur=16; x.shadowOffsetY=8;
+  _rrect(x,-calW/2,-calH/2,calW,calH,6);
+  x.fillStyle='#eef7f4'; x.fill(); x.shadowBlur=0; x.shadowOffsetY=0;
+
+  // header band
+  _rrect(x,-calW/2,-calH/2,calW,14,6);
+  const hg=x.createLinearGradient(-calW/2,0,calW/2,0);
+  hg.addColorStop(0,'#0a3028'); hg.addColorStop(.5,'#1a6050'); hg.addColorStop(1,'#0a3028');
+  x.fillStyle=hg; x.fill();
+  // square off the bottom corners of the header band so it reads as a strip
+  x.fillStyle=hg; x.fillRect(-calW/2,-calH/2+7,calW,7);
+
+  // ring tabs
+  x.fillStyle='#5ad8b8';
+  x.beginPath(); x.arc(-calW*.28,-calH/2,3,0,Math.PI*2); x.fill();
+  x.beginPath(); x.arc(calW*.28,-calH/2,3,0,Math.PI*2); x.fill();
+
+  // day grid dots
+  const gx0=-calW/2+9, gy0=-calH/2+22, gap=9.5;
+  for(let row=0; row<3; row++){
+    for(let col=0; col<5; col++){
+      const dx=gx0+col*gap, dy=gy0+row*gap;
+      const isHighlight=(row===1 && col===2);
+      x.beginPath(); x.arc(dx,dy,isHighlight?3.2:1.6,0,Math.PI*2);
+      x.fillStyle=isHighlight?'#1a6050':'rgba(20,60,50,.35)';
+      x.fill();
+      if(isHighlight){
+        x.strokeStyle='#5ad8b8'; x.lineWidth=1.2;
+        x.beginPath(); x.arc(dx,dy,4.6,0,Math.PI*2); x.stroke();
+      }
+    }
+  }
+  x.restore();
+
+  // glow behind the calendar
+  const gl=x.createRadialGradient(W*.48,H*.5,0,W*.48,H*.5,W*.55);
+  gl.addColorStop(0,'rgba(90,216,184,.2)'); gl.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=gl; x.fillRect(0,0,W,H);
+
+  // sparkle accents
+  [[W*.2,H*.22],[W*.82,H*.24],[W*.2,H*.78],[W*.85,H*.72]].forEach(([sx,sy])=>{
+    x.fillStyle='rgba(90,216,184,.55)'; x.font='8px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('✦',sx,sy);
+  });
+}
+
 // draw all pack canvases
 drawPackSpotlight(); drawPackStock(); drawPackCollection();
-drawPackNewsletter(); drawPackLeaderboard(); drawPackTrivia(); drawPackGrader(); drawPackFriends();
+drawPackNewsletter(); drawPackLeaderboard(); drawPackTrivia(); drawPackGrader(); drawPackFriends(); drawPackCardShows();
 document.querySelectorAll('.pack-wrap:not(.pack-soon)').forEach(wrap=>{
   wrap.addEventListener('click',()=>{
     const href=wrap.dataset.href;

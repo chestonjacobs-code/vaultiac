@@ -1,7 +1,22 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const pool = require('../db/db');
 const { requireAuth } = require('./auth');
 const router = express.Router();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'vaultiac_jwt_secret_change_in_production';
+
+// No optional-auth pattern exists elsewhere in the codebase — decode the
+// token if present, ignore silently if absent/invalid. Never blocks the request.
+function optionalAuth(req) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) return null;
+  try {
+    return jwt.verify(header.slice(7), JWT_SECRET);
+  } catch (e) {
+    return null;
+  }
+}
 
 const REQUIRED_FIELDS = ['show_name', 'city', 'state', 'zip', 'date_start', 'category'];
 const MILES_PER_HOUR = 45;
@@ -92,17 +107,29 @@ router.get('/search', async (req, res) => {
   if (!origin) return res.status(400).json({ error: "That doesn't look like a valid US ZIP code." });
 
   const radiusMiles = (radiusMinutes * MILES_PER_HOUR) / 60;
+  const authUser = optionalAuth(req);
 
   try {
     const params = [];
-    let query = `SELECT * FROM card_shows WHERE status = 'published' AND lat IS NOT NULL AND lng IS NOT NULL AND COALESCE(date_end, date_start) >= CURRENT_DATE`;
+    let query;
+    if (authUser) {
+      params.push(authUser.id);
+      query = `SELECT cs.*, COALESCE(sa.is_going, false) AS my_is_going, COALESCE(sa.is_vending, false) AS my_is_vending
+                FROM card_shows cs
+                LEFT JOIN show_attendance sa ON sa.show_id = cs.id AND sa.user_id = $1
+                WHERE cs.status = 'published' AND cs.lat IS NOT NULL AND cs.lng IS NOT NULL AND COALESCE(cs.date_end, cs.date_start) >= CURRENT_DATE`;
+    } else {
+      query = `SELECT cs.*, false AS my_is_going, false AS my_is_vending
+                FROM card_shows cs
+                WHERE cs.status = 'published' AND cs.lat IS NOT NULL AND cs.lng IS NOT NULL AND COALESCE(cs.date_end, cs.date_start) >= CURRENT_DATE`;
+    }
     if (date) {
       params.push(date);
-      query += ` AND date_start = $${params.length}`;
+      query += ` AND cs.date_start = $${params.length}`;
     }
     if (category) {
       params.push(category);
-      query += ` AND category = $${params.length}`;
+      query += ` AND cs.category = $${params.length}`;
     }
     const { rows } = await pool.query(query, params);
 

@@ -115,6 +115,23 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;m
 .show-meta{font-size:12px;color:var(--muted);line-height:1.6;}
 .show-notes{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px;font-style:italic;}
 
+/* ===== ATTENDANCE TOGGLE ===== */
+.attend-toggle{display:flex;gap:8px;margin-top:10px;}
+.attend-pill{flex:1;font-family:inherit;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:8px 10px;cursor:pointer;transition:.2s;text-align:center;}
+.attend-pill:hover{border-color:var(--teal-border);color:var(--paper);}
+.attend-pill.active{background:linear-gradient(90deg,var(--holo1),#5ad8b8);color:#06120c;border-color:transparent;}
+
+/* ===== FRIENDS ATTENDING PREVIEW ===== */
+.friends-attending:empty{display:none;}
+.friends-attending{margin-top:10px;}
+.friends-attending-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.friends-attending-row{display:flex;flex-wrap:wrap;gap:8px;}
+.friend-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);
+  border-radius:999px;padding:4px 10px 4px 4px;font-size:11px;color:var(--paper);}
+.friend-chip .attend-tag{font-size:9px;font-weight:700;color:var(--holo1);text-transform:uppercase;letter-spacing:.04em;}
+
 /* ===== EMPTY STATE ===== */
 .empty-state{display:none;text-align:center;padding:32px 16px;}
 .es-icon{font-size:32px;margin-bottom:10px;opacity:.6;}
@@ -391,7 +408,16 @@ function formatDateRange(startIso, endIso) {
   return sD.toLocaleDateString('en-US', opts) + ' – ' + eD.toLocaleDateString('en-US', opts);
 }
 
-function showCardHtml(s, showDate) {
+function avatarHtml(avatarUrl, name, size) {
+  size = size || 22;
+  if (avatarUrl) {
+    return `<img src="${avatarUrl}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex:none;">`;
+  }
+  const letter = escHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#f0a6c8);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:900;font-size:${Math.round(size * 0.42)}px;color:#0c0a10;flex:none;">${letter}</div>`;
+}
+
+function showCardHtml(s, showDate, context) {
   const metaBits = [];
   if (s.venue_name) metaBits.push(escHtml(s.venue_name));
   metaBits.push(`${escHtml(s.city)}, ${escHtml(s.state)}`);
@@ -400,7 +426,7 @@ function showCardHtml(s, showDate) {
   const extras = [];
   if (s.admission) extras.push('Admission: ' + escHtml(s.admission));
   if (s.table_count) extras.push(s.table_count + ' tables');
-  return `<div class="show-card">
+  return `<div class="show-card" data-show-id="${s.id}">
     <div class="show-card-top">
       <div class="show-name">${escHtml(s.show_name)}</div>
       <span class="cat-badge-sm">${escHtml(CATEGORY_LABELS[s.category] || s.category)}</span>
@@ -409,6 +435,11 @@ function showCardHtml(s, showDate) {
     ${dateLine ? `<div class="show-meta">${dateLine}</div>` : ''}
     ${extras.length ? `<div class="show-meta">${extras.join(' · ')}</div>` : ''}
     ${s.notes ? `<div class="show-notes">${escHtml(s.notes)}</div>` : ''}
+    <div class="attend-toggle">
+      <button class="attend-pill ${s.my_is_going ? 'active' : ''}" data-attend-action="going" data-show-id="${s.id}">I'm going</button>
+      <button class="attend-pill ${s.my_is_vending ? 'active' : ''}" data-attend-action="vending" data-show-id="${s.id}">I'm vending</button>
+    </div>
+    <div class="friends-attending" id="friends-attending-${context}-${s.id}"></div>
   </div>`;
 }
 
@@ -536,7 +567,8 @@ function renderDetailPanel() {
   }
   panel.style.display = 'block';
   const dateLabel = new Date(selectedDateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  panel.innerHTML = `<div class="detail-date">${escHtml(dateLabel)}</div>` + shows.map(s => showCardHtml(s, false)).join('');
+  panel.innerHTML = `<div class="detail-date">${escHtml(dateLabel)}</div>` + shows.map(s => showCardHtml(s, false, 'detail')).join('');
+  shows.forEach(s => loadFriendsAttending(s.id, 'detail'));
 }
 
 function renderList() {
@@ -545,7 +577,95 @@ function renderList() {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = lastResults.map(s => showCardHtml(s, true)).join('');
+  el.innerHTML = lastResults.map(s => showCardHtml(s, true, 'list')).join('');
+  lastResults.forEach(s => loadFriendsAttending(s.id, 'list'));
+}
+
+// ===== ATTENDANCE TOGGLE =====
+async function toggleAttendance(showId, action) {
+  if (!VaultAuth.isLoggedIn()) {
+    window.vaultiacOpenAuth('signup');
+    return;
+  }
+  const show = lastResults.find(s => s.id === showId);
+  if (!show) return;
+  const prevGoing = !!show.my_is_going;
+  const prevVending = !!show.my_is_vending;
+  const nextGoing = action === 'going' ? !prevGoing : prevGoing;
+  const nextVending = action === 'vending' ? !prevVending : prevVending;
+
+  show.my_is_going = nextGoing;
+  show.my_is_vending = nextVending;
+  renderList();
+  renderDetailPanel();
+
+  try {
+    let res;
+    if (!nextGoing && !nextVending) {
+      res = await fetch(`/api/card-shows/${showId}/attendance`, { method: 'DELETE', headers: authHeaders() });
+    } else {
+      res = await fetch(`/api/card-shows/${showId}/attendance`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ is_going: nextGoing, is_vending: nextVending }),
+      });
+    }
+    if (!res.ok) throw new Error('Attendance update failed');
+    delete friendsAttendingCache[showId];
+  } catch (e) {
+    show.my_is_going = prevGoing;
+    show.my_is_vending = prevVending;
+    renderList();
+    renderDetailPanel();
+    showToast('Could not update attendance — try again.');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.attend-pill');
+  if (!btn) return;
+  const showId = parseInt(btn.dataset.showId, 10);
+  const action = btn.dataset.attendAction;
+  toggleAttendance(showId, action);
+});
+
+// ===== FRIENDS ATTENDING PREVIEW =====
+const friendsAttendingCache = {};
+
+async function loadFriendsAttending(showId, context) {
+  if (!VaultAuth.isLoggedIn()) return;
+  const container = document.getElementById(`friends-attending-${context}-${showId}`);
+  if (!container) return;
+  if (friendsAttendingCache[showId]) {
+    renderFriendsAttending(container, friendsAttendingCache[showId]);
+    return;
+  }
+  try {
+    const res = await fetch(`/api/card-shows/${showId}/attendees`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    friendsAttendingCache[showId] = data.data || [];
+    renderFriendsAttending(container, friendsAttendingCache[showId]);
+  } catch (e) {
+    // network error — just leave the section absent
+  }
+}
+
+function friendAttendTagLabel(f) {
+  if (f.is_going && f.is_vending) return 'Going · Vending';
+  if (f.is_vending) return 'Vending';
+  return 'Going';
+}
+
+function renderFriendsAttending(container, friends) {
+  if (!container || !friends.length) {
+    if (container) container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = `<div class="friends-attending-label">Friends attending</div>
+    <div class="friends-attending-row">
+      ${friends.map(f => `<div class="friend-chip">${avatarHtml(f.avatar_url, f.username, 20)}<span>${escHtml(f.username)}</span><span class="attend-tag">${friendAttendTagLabel(f)}</span></div>`).join('')}
+    </div>`;
 }
 
 function switchView(view) {

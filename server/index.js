@@ -35,6 +35,7 @@ app.use('/api/groups', require('./routes/groups'));
 app.use('/api/grader', require('./routes/grader'));
 app.use('/api/spotlight', require('./routes/spotlight'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/card-shows', require('./routes/cardshows'));
 
 // Fallback — serve homepage only for non-file, non-API routes
 app.get('*', (req, res) => {

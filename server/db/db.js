@@ -180,6 +180,34 @@ async function initSchema() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+    // Card show finder — table_count and search/submit tracking
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS card_shows (
+        id SERIAL PRIMARY KEY,
+        show_name TEXT NOT NULL,
+        venue_name TEXT,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL,
+        zip TEXT NOT NULL,
+        lat NUMERIC,
+        lng NUMERIC,
+        date_start DATE NOT NULL,
+        date_end DATE,
+        time_range TEXT,
+        category TEXT NOT NULL,
+        table_count INTEGER,
+        admission TEXT,
+        notes TEXT,
+        source TEXT NOT NULL,
+        submitted_by INTEGER REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'published',
+        rejection_reason TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_card_shows_zip ON card_shows(zip);
+      CREATE INDEX IF NOT EXISTS idx_card_shows_date_start ON card_shows(date_start);
+      CREATE INDEX IF NOT EXISTS idx_card_shows_city_state ON card_shows(city, state);
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

@@ -201,4 +201,47 @@ router.post('/recap/dismiss', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/friends/upcoming-shows — upcoming shows where at least one friend is going/vending, grouped by show
+router.get('/upcoming-shows', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT cs.id AS show_id, cs.show_name, cs.city, cs.state, cs.date_start, cs.date_end,
+              u.id AS user_id, u.username, u.avatar_url, sa.is_going, sa.is_vending
+       FROM show_attendance sa
+       JOIN card_shows cs ON cs.id = sa.show_id
+       JOIN users u ON u.id = sa.user_id
+       JOIN friendships f ON f.user_a_id = LEAST($1, u.id) AND f.user_b_id = GREATEST($1, u.id)
+       WHERE cs.status = 'published' AND COALESCE(cs.date_end, cs.date_start) >= CURRENT_DATE
+       ORDER BY cs.date_start ASC, cs.id ASC`,
+      [req.user.id]
+    );
+
+    const showMap = new Map();
+    for (const r of rows) {
+      if (!showMap.has(r.show_id)) {
+        showMap.set(r.show_id, {
+          show_id: r.show_id,
+          show_name: r.show_name,
+          city: r.city,
+          state: r.state,
+          date_start: r.date_start,
+          date_end: r.date_end,
+          friends: [],
+        });
+      }
+      showMap.get(r.show_id).friends.push({
+        user_id: r.user_id,
+        username: r.username,
+        avatar_url: r.avatar_url,
+        is_going: r.is_going,
+        is_vending: r.is_vending,
+      });
+    }
+    return res.json(Array.from(showMap.values()));
+  } catch (e) {
+    console.error('[friends] upcoming-shows error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

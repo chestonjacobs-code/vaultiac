@@ -208,6 +208,21 @@ async function initSchema() {
       CREATE INDEX IF NOT EXISTS idx_card_shows_date_start ON card_shows(date_start);
       CREATE INDEX IF NOT EXISTS idx_card_shows_city_state ON card_shows(city, state);
     `);
+    // Show attendance — going/vending marks, visible to friends
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS show_attendance (
+        id SERIAL PRIMARY KEY,
+        show_id INTEGER NOT NULL REFERENCES card_shows(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        is_going BOOLEAN NOT NULL DEFAULT TRUE,
+        is_vending BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(show_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_show_attendance_show ON show_attendance(show_id);
+      CREATE INDEX IF NOT EXISTS idx_show_attendance_user ON show_attendance(user_id);
+    `);
     console.log('Database schema initialized');
   } finally {
     client.release();

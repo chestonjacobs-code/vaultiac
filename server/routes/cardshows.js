@@ -219,6 +219,63 @@ router.post('/submit', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/card-shows/:id/attendance — mark going/vending (upsert)
+router.post('/:id/attendance', requireAuth, async (req, res) => {
+  const showId = req.params.id;
+  const is_going = req.body.is_going === true;
+  const is_vending = req.body.is_vending === true;
+  if (!is_going && !is_vending) {
+    return res.status(400).json({ reason: 'You must be at least going or vending to mark attendance.' });
+  }
+  try {
+    const showCheck = await pool.query('SELECT id FROM card_shows WHERE id = $1', [showId]);
+    if (showCheck.rows.length === 0) return res.status(404).json({ error: 'Show not found.' });
+
+    const { rows } = await pool.query(
+      `INSERT INTO show_attendance (show_id, user_id, is_going, is_vending)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (show_id, user_id) DO UPDATE SET is_going = $3, is_vending = $4, updated_at = NOW()
+       RETURNING *`,
+      [showId, req.user.id, is_going, is_vending]
+    );
+    return res.json(rows[0]);
+  } catch (e) {
+    console.error('[card-shows] attendance upsert error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/card-shows/:id/attendance — remove the current user's own attendance row
+router.delete('/:id/attendance', requireAuth, async (req, res) => {
+  const showId = req.params.id;
+  try {
+    await pool.query('DELETE FROM show_attendance WHERE show_id = $1 AND user_id = $2', [showId, req.user.id]);
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[card-shows] attendance delete error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/card-shows/:id/attendees — friends only (never the requester's own row)
+router.get('/:id/attendees', requireAuth, async (req, res) => {
+  const showId = req.params.id;
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.id AS user_id, u.username, u.avatar_url, sa.is_going, sa.is_vending
+       FROM show_attendance sa
+       JOIN users u ON u.id = sa.user_id
+       JOIN friendships f ON f.user_a_id = LEAST($2, u.id) AND f.user_b_id = GREATEST($2, u.id)
+       WHERE sa.show_id = $1`,
+      [showId, req.user.id]
+    );
+    return res.json({ data: rows });
+  } catch (e) {
+    console.error('[card-shows] attendees error:', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
 module.exports.geocodeZip = geocodeZip;
 module.exports.geocodeCityState = geocodeCityState;
